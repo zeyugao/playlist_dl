@@ -1,3 +1,11 @@
+script.js
+/music_save/
+/pic_save/
+
+test.py
+require.txt
+cookie
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -99,3 +107,4 @@ ENV/
 
 # mypy
 .mypy_cache/
+
