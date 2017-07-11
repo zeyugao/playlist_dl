@@ -80,7 +80,8 @@ class NetEase(object):
             'Content-Type': 'application/x-www-form-urlencoded',
             'Host': 'music.163.com',
             'Referer': 'http://music.163.com/search/',
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/56.0.2924.76 Chrome/56.0.2924.76 Safari/537.36'
+            'User-Agent': ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)'
+                           ' Ubuntu Chromium/56.0.2924.76 Chrome/56.0.2924.76 Safari/537.36')
         }
         self.session = requests.Session()
         self.session.cookies = LWPCookieJar(cookie_path)
@@ -179,6 +180,7 @@ class NetEase(object):
         self.download_file(url, file_path)
         return file_path
 
+    # 下面两个函数参考https://greasyfork.org/scripts/23222-%E7%BD%91%E6%98%93%E4%BA%91%E4%B8%8B%E8%BD%BD/code/%E7%BD%91%E6%98%93%E4%BA%91%E4%B8%8B%E8%BD%BD.user.js
     def search_xiami_song(self, song_name):
         '''网易云不允许下载时用虾米的接口
 
@@ -194,7 +196,8 @@ class NetEase(object):
             'Accept-Encoding': 'gzip,deflate,sdch',
             'Accept-Language': 'zh-CN,zh;q=0.8,gl;q=0.6,zh-TW;q=0.4',
             'Host': 'musicafe.co',
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/56.0.2924.76 Chrome/56.0.2924.76 Safari/537.36'
+            'User-Agent': ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)'
+                           ' Ubuntu Chromium/56.0.2924.76 Chrome/56.0.2924.76 Safari/537.36')
         }
         ret = json.loads(requests.get(target_url, headers=headers).text)
         if ret['success']:
