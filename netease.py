@@ -1,4 +1,6 @@
 # encoding=utf-8
+# python3
+
 import requests
 import json
 import hashlib
@@ -10,8 +12,6 @@ import binascii
 import re
 from Crypto.Cipher import AES
 from http.cookiejar import LWPCookieJar
-
-from storage import Storage
 
 modulus = ('00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7'
            'b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280'
@@ -69,7 +69,6 @@ class NetEase(object):
                 'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36'
         }
         self.session = requests.Session()
-        self.storage = Storage()
         self.session.cookies = LWPCookieJar(cookie_path)
         self.session.cookies.load()
         self.csrf = ''
@@ -78,7 +77,7 @@ class NetEase(object):
                 self.csrf = cookie.value
         if self.csrf == '':
             print('Please update your cookie')
-        self.set_privilege()
+        self.set_privilege_weapi()
         self.set_save_folder()
 
     def login(self, username, password):
@@ -99,7 +98,7 @@ class NetEase(object):
             self.session.cookies.save()
             ret.encoding = 'utf-8'
             return ret.text
-        except:
+        except requests.exceptions.RequestException:
             return {'code': 501}
 
     def set_save_folder(self, music_folder='./music_save/', pic_folder='./pic_save/'):
@@ -113,7 +112,7 @@ class NetEase(object):
         if not os.path.exists(self.pic_folder):
             os.makedirs(self.pic_folder)
 
-    def set_privilege(self, privilege_br=None):
+    def set_privilege_weapi(self, privilege_br=None):
         '''设置下载码率优先级
         Args:
             privilege_br<dict>:
@@ -139,6 +138,7 @@ class NetEase(object):
 
     def download_file(self, url, file_path, overwrite=False):
         if os.path.exists(file_path) and not overwrite:
+            print('File: %s already exists, skip' % file_path)
             return
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -153,13 +153,13 @@ class NetEase(object):
 
     def download_album_pic_and_save(self, url, file_name):
         pic_path = os.path.join(self.pic_folder, file_name + '.jpg')
-        print('Download album pic: %s' % file_name)
+        print('Download album pic: %s.jpg' % file_name, end='\t')
         self.download_file(url, pic_path)
         return pic_path
 
     def download_single_song_and_save(self, url, file_name):
         file_path = os.path.join(self.music_folder, file_name + '.mp3')
-        print('Download song: %s' % file_name)
+        print('Download song: %s.mp3' % file_name, end)
         self.download_file(url, file_path)
         return file_path
 
@@ -172,9 +172,34 @@ class NetEase(object):
             'csrf_token': self.csrf
         }
         ret = self.session.post(target_url, data=encrypted_request(data), headers=self.headers)
-        return json.loads(ret.text)
 
-    def get_playlist_detail_weapi(self, playlist_id=None, playlist_url=None):
+        json_temp = json.loads(ret.text)
+        if json_temp['code'] == 200:
+            return json_temp['data']
+        else:
+            print('Error! Code: %s', json_temp['code'])
+            return json_temp['data']
+
+    def get_and_parse_playlist_detail_weapi(self, playlist_url):
+        '''
+        Args:
+            playlist_url:歌单网站
+            playlist_id:歌单id
+            二选一即可
+        Ret:
+            ret_info<dict>:
+                并以歌曲id作为关键字
+                包含
+                    song_name:歌曲名
+                    album<name,picUrl>:专辑的名字，专辑封面
+                    artists:参与创作的艺术家
+                    file_name:当前歌曲应该保存的文件名
+            pack<dict>:相同码率的进行包装
+        '''
+
+        return self.parse_playlist_detail_weapi(self.get_playlist_detail_weapi(playlist_url))
+
+    def get_playlist_detail_weapi(self, playlist_url):
         '''用新版的weapi获取歌单信息
         Args:
             playlist_url:歌单网站
@@ -184,30 +209,30 @@ class NetEase(object):
             json:歌单信息
 
         '''
-        id = None
-        if not playlist_url and not playlist_id:
-            raise ValueError('Need url or id')
-        elif playlist_url and playlist_id:
-            id = playlist_id
-        elif playlist_id:
-            id = playlist_id
-        else:
-            id = playlist_url.split('playlist?id=')[1]
+        # print('get_playlist_detail_weapi func begin')
+        try:
+            id_ = playlist_url.split('playlist?id=')[1]
+        except IndexError as e:
+            print('Please input correct url')
+            return
         target_url = 'http://music.163.com/weapi/v3/playlist/detail?csrf_token=' + self.csrf
         data = {
-            'id': id,
+            'id': id_,
             'offset': 0,
             'total': True,
             'limit': 5000,
             'n': 5000,
             'csrf_token': self.csrf
         }
-        # print(data)
         ret = self.session.post(target_url, data=encrypted_request(data), headers=self.headers)
-        # print(ret)
-        return json.loads(ret.text)['playlist']['tracks']
+        json_temp = json.loads(ret.text)
+        if json_temp['code'] == 200:
+            return json_temp['playlist']['tracks']
+        else:
+            print('Error! Code: %s', json_temp['code'])
+            return json_temp['data']
 
-    def get_br_by_privilege(self, all_quality):
+    def get_quality_by_privilege_weapi(self, all_quality):
         '''根据原先设置的优先级确定某一首歌曲的码率
         '''
         selected_quality = -1
@@ -217,32 +242,39 @@ class NetEase(object):
                 break
         return selected_quality
 
-    def parse_playlist_detail(self, raw_playlist_detail):
+    def parse_playlist_detail_weapi(self, raw_playlist_detail):
         '''对从网易云获取到的信息进行整合
 
         Args:
             raw_playlist_detail<list>:刚刚从网易云中获取到的信息
         Ret:
-            <list>:整理过的信息
+            ret_info<dict>:
+                并以歌曲id作为关键字
+                包含
+                    song_name:歌曲名
+                    album<name,picUrl>:专辑的名字，专辑封面
+                    artists:参与创作的艺术家
+                    file_name:当前歌曲应该保存的文件名
+            pack<dict>:相同码率的进行包装
         '''
-        ret_info = []
+        if raw_playlist_detail is None:
+            return {}, {}
+        ret_info = {}
 
         # 将被选为同一个码率的歌曲“包装”在一起，我实在是想不到什么好的取名方式了
         pack = {}
 
-        file_name = {}
         for single_song_detail in raw_playlist_detail:
             temp = {}
             temp['song_name'] = single_song_detail['name']
             temp['album'] = {}
-            temp['artists'] = []
-
-            combined_artists = ''
+            temp['artists'] = ''
             for artist in single_song_detail['ar']:
-                temp['artists'].append(artist['name'])
-                combined_artists = combined_artists + artist['name'] + ','
+                temp['artists'] = temp['artists'] + artist['name'] + ','
+            temp['artists'] = temp['artists'][:-1]
 
-            file_name[single_song_detail['id']] = combined_artists[:-1] + ' - ' + single_song_detail['name']
+            temp['file_name'] = temp['artists'] + ' - ' + single_song_detail['name']
+            temp['id'] = single_song_detail['id']
             # 可能有album的key就一定会有值？
             if 'al' in single_song_detail and single_song_detail['al']:
                 temp['album']['picUrl'] = single_song_detail['al']['picUrl']
@@ -252,20 +284,21 @@ class NetEase(object):
             quality['h'] = single_song_detail['h']['br'] if single_song_detail['h'] else None  # high
             quality['m'] = single_song_detail['m']['br'] if single_song_detail['m'] else None  # middle
             quality['l'] = single_song_detail['l']['br'] if single_song_detail['l'] else None  # low
-            quality_id = single_song_detail[self.get_br_by_privilege(quality)]['br']
+            quality_id = single_song_detail[self.get_quality_by_privilege_weapi(quality)]['br']
             if quality_id in pack:
                 pack[quality_id].append(single_song_detail['id'])
             else:
                 pack[quality_id] = [single_song_detail['id']]
 
-            ret_info.append(temp)
-        return ret_info, pack, file_name
+            ret_info[single_song_detail['id']] = temp
+        return ret_info, pack
 
     '''以下的全是旧版本的api'''
+    '''已被弃用'''
 
     def get_playlist_detail(self, playlist_url=None, playlist_id=None):
         '''获取歌单的信息
-
+           已被弃用
         Args:
             playlist_url<str>:歌单网站
             playlist_id<str/int>:歌单id
@@ -293,7 +326,7 @@ class NetEase(object):
 
     def get_song_detail(self, id):
         '''获取单曲的信息
-
+           已被弃用
         Args:
             id<str/int>:单曲的id
         Ret:
@@ -303,7 +336,6 @@ class NetEase(object):
         ret = None
         try:
             ret = json.loads(self.session.get(target_url).text)
-            # print(ret)
         except requests.exceptions.RequestException as e:
             print(e)
             ret = {}
@@ -325,6 +357,7 @@ class NetEase(object):
 
     def download_single_song(self, file_folder, song_info, privilege=None):
         '''下载单首歌
+           已被弃用
         Error: Unfinished
 
         Error: id有问题，应该是dfsid,但返回的dfsid全是0了
@@ -343,25 +376,25 @@ class NetEase(object):
         for artist in song_info['artists']:
             combined_artists = combined_artists + artist + ','
         file_path = os.path.join(file_folder, combined_artists[:-1] + ' - ' + song_info['name'] + '.mp3')
-        print(file_path)
+        # print(file_path)
         # 优先级
         selected_privilege = None
         for selected_privilege_temp in privilege:
             if selected_privilege_temp in song_info['quality_id']:
                 selected_privilege = selected_privilege_temp
                 break
-        print(selected_privilege)
+        # print(selected_privilege)
         enc_id = self.encrypted_id(song_info['quality_id'][selected_privilege])
         if not os.path.exists(file_path):
             target_url = 'http://m%s.music.126.net/%s/%s.mp3' % (
                 random.randrange(1, 3), enc_id, song_info['quality_id'][selected_privilege])
-            print(target_url)
+            # print(target_url)
         pass
 
     def get_song_info(self, raw_info):
         '''对网易云获取到的歌曲信息进行整理
            一是为了下载，二是为了写入到mp3文件中
-
+           
         Args:
             raw_info<dict>:刚刚从网易云中获取到的信息
         Ret:

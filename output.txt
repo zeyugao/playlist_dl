@@ -1,0 +1,12 @@
+Download song: Yiruma - River Flows in You
+File: ./music_save/Yiruma - River Flows in You.mp3 already exists, skip
+Download album pic: Yiruma - River Flows in You
+File: ./pic_save/Yiruma - River Flows in You.jpg already exists, skip
+Yiruma
+<class 'str'>
+Download song: 舒伯特 - 小夜曲
+File: ./music_save/舒伯特 - 小夜曲.mp3 already exists, skip
+Download album pic: 舒伯特 - 小夜曲
+File: ./pic_save/舒伯特 - 小夜曲.jpg already exists, skip
+舒伯特
+<class 'str'>
