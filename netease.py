@@ -9,9 +9,9 @@ import datetime
 import os
 import random
 import binascii
-import re
 from Crypto.Cipher import AES
 from http.cookiejar import LWPCookieJar
+
 
 modulus = ('00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7'
            'b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280'
@@ -53,11 +53,26 @@ def createSecretKey(size):
     return binascii.hexlify(os.urandom(size))[:16]
 
 
+def encrypted_id(id):
+    magic = bytearray('3go8&$8*3*3h0k(2)2', 'u8')
+    song_id = bytearray(id, 'u8')
+    magic_len = len(magic)
+    for i, sid in enumerate(song_id):
+        song_id[i] = sid ^ magic[i % magic_len]
+    m = hashlib.md5(song_id)
+    result = m.digest()
+    result = base64.b64encode(result)
+    result = result.replace(b'/', b'_')
+    result = result.replace(b'+', b'-')
+    return result.decode('utf-8')
+
+
 class NetEase(object):
     '''包装网易云的api'''
 
     def __init__(self):
         self.headers = {
+            # 'Cookie': 'appver=1.5.2',
             'Accept': '*/*',
             'Accept-Encoding': 'gzip,deflate,sdch',
             'Accept-Language': 'zh-CN,zh;q=0.8,gl;q=0.6,zh-TW;q=0.4',
@@ -65,8 +80,7 @@ class NetEase(object):
             'Content-Type': 'application/x-www-form-urlencoded',
             'Host': 'music.163.com',
             'Referer': 'http://music.163.com/search/',
-            'User-Agent':
-                'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/56.0.2924.76 Chrome/56.0.2924.76 Safari/537.36'
         }
         self.session = requests.Session()
         self.session.cookies = LWPCookieJar(cookie_path)
@@ -80,10 +94,11 @@ class NetEase(object):
         self.set_privilege_weapi()
         self.set_save_folder()
 
+    '''
     def login(self, username, password):
         pattern = re.compile(r'^0\d{2,3}\d{7,8}$|^1[34578]\d{9}$')
         if pattern.match(username):
-            '''需要用手机登陆'''
+            # 需要用手机登陆
             pass
         self.session.cookies.load()
         target_url = 'https://music.163.com/weapi/login?csrf_token='
@@ -100,6 +115,7 @@ class NetEase(object):
             return ret.text
         except requests.exceptions.RequestException:
             return {'code': 501}
+    '''
 
     def set_save_folder(self, music_folder='./music_save/', pic_folder='./pic_save/'):
         '''设置保存的音乐位置
@@ -145,7 +161,7 @@ class NetEase(object):
 
         respond = self.session.get(url, stream=True)
         file_lenght = int(respond.headers.get('content-length'))
-        print('File size: %s KB' % int(file_lenght / 1024))
+        print('File size: %s B, %s KB' % (int(file_lenght), int(file_lenght / 1024)))
         with open(file_path, 'wb') as file:
             for chunk in respond.iter_content(chunk_size=1024):
                 if chunk:
@@ -153,15 +169,87 @@ class NetEase(object):
 
     def download_album_pic_and_save(self, url, file_name):
         pic_path = os.path.join(self.pic_folder, file_name + '.jpg')
-        print('Download album pic: %s.jpg' % file_name, end='\t')
+        print('Download album pic: %s.jpg' % file_name)
         self.download_file(url, pic_path)
         return pic_path
 
     def download_single_song_and_save(self, url, file_name):
         file_path = os.path.join(self.music_folder, file_name + '.mp3')
-        print('Download song: %s.mp3' % file_name, end)
+        print('Download song: %s.mp3' % file_name)
         self.download_file(url, file_path)
         return file_path
+
+    def search_xiami_song(self, song_name):
+        '''网易云不允许下载时用虾米的接口
+
+        Args:
+            song_name<str>:歌曲名+歌手名组合成的字符串
+        Ret:
+            <str>:下载url
+        '''
+        print("Even couldn't find %s on NetEase, now search on xiami" % song_name)
+        target_url = 'http://musicafe.co:8080/api/search/song/xiami?&limit=1&page=1&key=' + song_name
+        headers = {
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip,deflate,sdch',
+            'Accept-Language': 'zh-CN,zh;q=0.8,gl;q=0.6,zh-TW;q=0.4',
+            'Host': 'musicafe.co',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/56.0.2924.76 Chrome/56.0.2924.76 Safari/537.36'
+        }
+        ret = json.loads(requests.get(target_url, headers=headers).text)
+        if ret['success']:
+            return ret['songList'][0]['file']
+        else:
+            print('Faild search on xiami')
+            return
+
+    def search_song(self, song_id, song_name):
+        '''在无法直接获得歌曲的url时候用搜索的方式来获得歌曲下载地址
+
+        Args:
+            song_id<str/int>:在网易云音乐上的歌曲id
+            song_name<str>:歌曲名+歌手名组合成的字符串
+            Ret:
+                <str>:下载url
+        '''
+        # target_url = 'http://music.163.com/weapi/cloudsearch/get/web?csrf_token=' + self.csrf
+
+        print("Couldn't download %s directly, now search on NetEase" % song_name)
+        target_url = 'http://music.163.com/weapi/search/pc'
+        data = {
+            's': str(song_id),
+            'limit': 1,
+            'type': 1,
+            'offset': 0,
+        }
+        ret = None
+        try:
+            ret = json.loads(self.session.post(target_url, data=encrypted_request(
+                data), headers=self.headers).text)['result']['songs'][0]
+        except IndexError:
+            print('Can not get song')
+            return
+        # TODO:提供品质的选择
+        quality_privilege = {1: 'mMusic', 0: 'hMusic', 2: 'lMusic', 3: 'bMusic'}
+        music = {}
+        for i in range(0, len(quality_privilege)):
+            if ret[quality_privilege[i]]:
+                music = ret[quality_privilege[i]]
+                break
+        dfsId = None
+        if 'dfsId' in music:
+            dfsId = music['dfsId']
+        if 'dfsId_str' in music:
+            dfsId = music['dfsId_str']
+        target_url = None
+        if music and dfsId:
+            target_url = 'http://p2.music.126.net/%s/%s.jpg.mp3' % (encrypted_id(str(dfsId)), dfsId)
+        elif not ret['mp3Url'].endswith('==/0.mp3'):
+            target_url = ret['mp3Url']
+
+        if not target_url:
+            target_url = self.search_xiami_song(song_name)
+        return target_url
 
     def get_songs_info_weapi(self, songs_id, quality):
         target_url = 'http://music.163.com/weapi/song/enhance/player/url?csrf_token=' + self.csrf
@@ -177,7 +265,7 @@ class NetEase(object):
         if json_temp['code'] == 200:
             return json_temp['data']
         else:
-            print('Error! Code: %s', json_temp['code'])
+            print('Error! Code: %s' % json_temp['code'])
             return json_temp['data']
 
     def get_and_parse_playlist_detail_weapi(self, playlist_url):
@@ -224,8 +312,7 @@ class NetEase(object):
             'n': 5000,
             'csrf_token': self.csrf
         }
-        ret = self.session.post(target_url, data=encrypted_request(data), headers=self.headers)
-        json_temp = json.loads(ret.text)
+        json_temp = json.loads(self.session.post(target_url, data=encrypted_request(data), headers=self.headers).text)
         if json_temp['code'] == 200:
             return json_temp['playlist']['tracks']
         else:
@@ -241,6 +328,20 @@ class NetEase(object):
                 selected_quality = self.privilege[current_br]
                 break
         return selected_quality
+
+    def replace_file_name(self, file_name):
+        t = ["\\", "/", "*", "?", "<", ">", "|", '"']
+        for i in t:
+            file_name = file_name.replace(i, '')
+        return file_name
+
+    def get_more_song_detail(self, id):
+        raw = self.get_song_detail(id)
+        ret = {}
+        ret['year'] = (datetime.datetime.utcfromtimestamp(
+            int(raw['songs'][0]['album']['publishTime']) / 1000) + datetime.timedelta(hours=8)).year
+        ret['company'] = raw['songs'][0]['album']['company']
+        return ret
 
     def parse_playlist_detail_weapi(self, raw_playlist_detail):
         '''对从网易云获取到的信息进行整合
@@ -269,12 +370,24 @@ class NetEase(object):
             temp['song_name'] = single_song_detail['name']
             temp['album'] = {}
             temp['artists'] = ''
+
             for artist in single_song_detail['ar']:
                 temp['artists'] = temp['artists'] + artist['name'] + ','
             temp['artists'] = temp['artists'][:-1]
 
-            temp['file_name'] = temp['artists'] + ' - ' + single_song_detail['name']
+            if len(temp['artists']) > 60:
+                # 如果艺术家过多导致文件名过长，则文件名的作者则为第一个艺术家的名字
+                print('Song: %s\'s name too long, cut' % single_song_detail['name'])
+                temp['file_name'] = temp['artists'].split(',')[0] + ' - ' + single_song_detail['name']
+            else:
+                temp['file_name'] = temp['artists'] + ' - ' + single_song_detail['name']
+            temp['file_name'] = self.replace_file_name(temp['file_name'])
+
             temp['id'] = single_song_detail['id']
+            temp_get_more_song_detail = self.get_more_song_detail(single_song_detail['id'])
+            temp['year'] = temp_get_more_song_detail['year']
+            temp['company'] = temp_get_more_song_detail['company']
+
             # 可能有album的key就一定会有值？
             if 'al' in single_song_detail and single_song_detail['al']:
                 temp['album']['picUrl'] = single_song_detail['al']['picUrl']
@@ -294,7 +407,6 @@ class NetEase(object):
         return ret_info, pack
 
     '''以下的全是旧版本的api'''
-    '''已被弃用'''
 
     def get_playlist_detail(self, playlist_url=None, playlist_id=None):
         '''获取歌单的信息
@@ -326,11 +438,11 @@ class NetEase(object):
 
     def get_song_detail(self, id):
         '''获取单曲的信息
-           已被弃用
+
         Args:
             id<str/int>:单曲的id
         Ret:
-            json:单曲信息
+            dict:单曲信息
         '''
         target_url = 'http://music.163.com/api/song/detail/?id={}&ids=[{}]'.format(id, id)
         ret = None
@@ -340,20 +452,6 @@ class NetEase(object):
             print(e)
             ret = {}
         return ret
-
-    def encrypted_id(self, id):
-        '''歌曲加密算法, 基于https://github.com/yanunon/NeteaseCloudMusic脚本实现'''
-        magic = bytearray('3go8&$8*3*3h0k(2)2', 'u8')
-        song_id = bytearray(id, 'u8')
-        magic_len = len(magic)
-        for i, sid in enumerate(song_id):
-            song_id[i] = sid ^ magic[i % magic_len]
-        m = hashlib.md5(song_id)
-        result = m.digest()
-        result = base64.b64encode(result)
-        result = result.replace(b'/', b'_')
-        result = result.replace(b'+', b'-')
-        return result.decode('utf-8')
 
     def download_single_song(self, file_folder, song_info, privilege=None):
         '''下载单首歌
@@ -394,7 +492,7 @@ class NetEase(object):
     def get_song_info(self, raw_info):
         '''对网易云获取到的歌曲信息进行整理
            一是为了下载，二是为了写入到mp3文件中
-           
+
         Args:
             raw_info<dict>:刚刚从网易云中获取到的信息
         Ret:
