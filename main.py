@@ -4,12 +4,12 @@ import netease
 import getopt
 import sys
 import time
-from mp3_modify import modify_info
+import tools
 
 
-def wait():
-    print('Wait for 3s')
-    time.sleep(3)  # 防止被网易ban
+def wait(wait_time=1):
+    print('Wait for %ds' % wait_time)
+    time.sleep(wait_time)  # 防止被网易ban
 
 
 def main():
@@ -20,17 +20,18 @@ def main():
         return
 
     netease_ins = netease.NetEase()
-    ret_info, pack = netease_ins.get_and_parse_playlist_detail_weapi(args[0])
+    song_info_sortby_id, playlist_detail_sortby_br = netease_ins.get_and_parse_playlist_detail_weapi(args[0])
     print('')
-    for (br, ids) in pack.items():
+    for (br, ids) in playlist_detail_sortby_br.items():
         wait()
         all_songs_info = netease_ins.get_songs_info_weapi(ids, br)
         for single_song_info in all_songs_info:
-            current_song_info = ret_info[single_song_info['id']]
+            current_song_info = song_info_sortby_id[single_song_info['id']]
             song_download_url = None
-
+            check_md5 = False
             if single_song_info['url']:
                 song_download_url = single_song_info['url']
+                check_md5 = True
             else:
                 song_download_url = netease_ins.search_song(single_song_info['id'], current_song_info['file_name'])
             if song_download_url is None:
@@ -41,11 +42,10 @@ def main():
 
             pic_path = netease_ins.download_album_pic_and_save(current_song_info['album']['picUrl'],
                                                                current_song_info['file_name'])
+            current_song_info['pic_path'] = pic_path
+
             print('Modify info for song: %s' % current_song_info['file_name'])
-            modify_info(file_path, pic_path=pic_path, title=current_song_info[
-                        'song_name'], album=current_song_info['album']['name'],
-                        artists=current_song_info['artists'], time=current_song_info['year'],
-                        company=current_song_info['company'])
+            tools.modify_info(file_path, current_song_info)
             print('')
             wait()
 
