@@ -6,11 +6,18 @@ import sys
 import time
 import tools
 
+privilege = {
+    1: 'h',
+    0: 'm',
+    2: 'l'
+}
+music_folder = './music_save/'
+pic_folder = './pic_save/'
+
 
 def wait(wait_time=1):
     print('Wait for %ds' % wait_time)
     time.sleep(wait_time)  # 防止被网易ban
-
 
 def main():
     try:
@@ -20,6 +27,9 @@ def main():
         return
 
     netease_ins = netease.NetEase()
+    netease_ins.set_privilege_weapi(privilege)
+    netease_ins.set_save_folder(music_folder=music_folder, pic_folder=pic_folder)
+
     song_info_sortby_id, playlist_detail_sortby_br = netease_ins.get_and_parse_playlist_detail_weapi(args[0])
     print('')
     for (br, ids) in playlist_detail_sortby_br.items():
@@ -28,10 +38,8 @@ def main():
         for single_song_info in all_songs_info:
             current_song_info = song_info_sortby_id[single_song_info['id']]
             song_download_url = None
-            check_md5 = False
             if single_song_info['url']:
                 song_download_url = single_song_info['url']
-                check_md5 = True
             else:
                 song_download_url = netease_ins.search_song(single_song_info['id'], current_song_info['file_name'])
             if song_download_url is None:

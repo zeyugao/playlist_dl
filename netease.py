@@ -130,11 +130,12 @@ class NetEase(object):
 
         respond = self.session.get(url, stream=True)
         file_lenght = int(respond.headers.get('content-length'))
-        print('File size: %s B, %s KB' % (int(file_lenght), int(file_lenght / 1024)))
+        print('File size: %s B, %s KB' % (int(file_lenght), int(file_lenght / 1024)), end='')
         with open(file_path, 'wb') as file:
             for chunk in respond.iter_content(chunk_size=1024):
                 if chunk:
                     file.write(chunk)
+        print('-Done')
 
     def download_album_pic_and_save(self, url, file_name, overwrite=False):
         pic_path = os.path.join(self.pic_folder, file_name + '.jpg')
@@ -346,6 +347,7 @@ class NetEase(object):
                 temp['file_name'] = temp['artists'].split(',')[0] + ' - ' + single_song_detail['name']
             else:
                 temp['file_name'] = temp['artists'] + ' - ' + single_song_detail['name']
+            temp['artists'] = temp['artists'].replace(',', ';')
             temp['file_name'] = self.replace_file_name(temp['file_name'])
 
             temp['id'] = single_song_detail['id']

@@ -10,8 +10,6 @@ def generate_163key(data):
     # AES 128
     pass
 
-def check_md5(file_path,md5):
-    pass
 
 def modify_info(mp3_path, custom_info):
     '''修改mp3文件的信息
