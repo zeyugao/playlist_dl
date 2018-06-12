@@ -1,11 +1,3 @@
-script.js
-/music_save/
-/pic_save/
-
-test.py
-require.txt
-cookie
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -108,4 +100,11 @@ ENV/
 # mypy
 .mypy_cache/
 
-网易云下载.js
+script.js
+/music_save/
+/pic_save/
+.vscode/
+test.py
+require.txt
+cookie
+extra_music_file.txt
