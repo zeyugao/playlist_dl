@@ -9,12 +9,26 @@ from tools import (download_music_file, download_album_pic, modify_mp3)
 
 class Sonimei(object):
     def download_song(self, song_title, song_author, song_album, music_folder, pic_folder, type):
+        '''
+            在music.sonimei.cn上搜索歌曲，并下载
+
+        Args:
+            song_title<str>:歌曲名
+            song_author<str>:歌手名
+            song_album<str>:专辑名
+            music_folder<str>:相对于程序目录的文件夹，用于存下载的歌曲
+            pic_folder<str>:相对于程序目录的文件夹，用于存下载的歌曲的专辑封面
+            type<str>:用于传递到music.sonimei.cn，用来设置从哪个音乐网站上搜索
+                <可选参数>: kugou   netease qq
+                            kuwo    xiami   baidu
+                            1ting   migu    lizhi
+                            qingting    ximalaya
+                            kg      5singyc 5singfc
+        '''
         search_result = self.search(song_title, song_author, type)
         del search_result['lrc']
-        print(search_result)
 
         artists = search_result['author'].split(',')
-        print(artists)
         file_name = ''
         for artist in search_result['author'].split(','):
             file_name = file_name + artist + ','
@@ -25,8 +39,9 @@ class Sonimei(object):
             file_name = artists[0] + ' - ' + search_result['title']
         else:
             file_name = file_name + ' - ' + search_result['title']
-        print(file_name)
         file_path = os.path.join(music_folder, file_name + '.mp3')
+
+        print(file_name,search_result['url'])
         download_music_file(search_result['url'], file_path)
         pic_path = os.path.join(pic_folder, file_name + '.jpg')
         download_album_pic(search_result['pic'], pic_path)
@@ -36,7 +51,7 @@ class Sonimei(object):
             'artists': search_result['author'].replace(',', ';'),
             'pic_path': pic_path
         }
-        if song_album:
+        if song_album and not song_album == '':
             music_info['album'] = song_album
         modify_mp3(file_path, music_info)
 

@@ -12,14 +12,15 @@ def read_extra_music(extra_music_file):
         return []
     extra_music = []
     with open(extra_music_file, 'r') as file:
-        for line in file:
-            splited_line = line.split(' ')
+        for line in file.readlines():
+            splited_line = line.split(';')
             extra_music.append({
                 'title': splited_line[0],
                 'artists': splited_line[1],
                 'album': splited_line[2],
                 'type': splited_line[3]
             })
+    return extra_music
 
 
 def download_playist(playlist_url,
@@ -33,7 +34,7 @@ def download_playist(playlist_url,
         os.makedirs(pic_folder)
 
     search_songs_list = []
-    '''
+    
     ne = NetEase()
     ne.set_playlist_url(playlist_url)
     error_songs_detail = ne.download_playlist(music_folder=music_folder, pic_folder=pic_folder)
@@ -45,7 +46,7 @@ def download_playist(playlist_url,
             'album': error_song['album']['name'],
             'type': 'qq'
         })
-    '''
+    
 
     search_songs_list.extend(read_extra_music(os.path.join(os.getcwd(),'extra_music_file.txt')))
 

@@ -12,7 +12,7 @@ import time
 import requests
 from Crypto.Cipher import AES
 
-from tools import (download_music_file,download_album_pic,modify_mp3)
+from tools import (download_music_file, download_album_pic, modify_mp3)
 
 MODULUS = ('00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7'
            'b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280'
@@ -73,12 +73,12 @@ fake_headers = {
     'Host': 'music.163.com',
     'Referer': 'http://music.163.com/search/',
     'X-Real-IP': '27.38.4.87',
-    'Cookie':'os=ios',      # 不知道为什么加了这一句，就可以下载一些歌了
+    'Cookie': 'os=ios',      # 不知道为什么加了这一句，就可以下载一些歌了
     'User-Agent': ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)'
                        ' Ubuntu Chromium/56.0.2924.76 Chrome/56.0.2924.76 Safari/537.36')
 }
 
-#  __remember_me=true;_iuqxldmzr_=32; appsign=true; websign=true; 
+#  __remember_me=true;_iuqxldmzr_=32; appsign=true; websign=true;
 
 
 class NetEase(object):
@@ -89,9 +89,15 @@ class NetEase(object):
         self.privilege = {1: 'h', 0: 'm', 2: 'l'}
 
     def set_playlist_id(self, id):
+        '''
+            设置歌单id
+        '''
         self.id = id
 
     def set_playlist_url(self, url):
+        '''
+            设置歌单url
+        '''
         self.id = url.split('playlist?id=')[1]
 
     def get_playlist_detail(self, playlist_id):
@@ -153,6 +159,7 @@ class NetEase(object):
             if 'al' in origin_single_song_detail and origin_single_song_detail['al']:
                 single_song_detail['album']['picUrl'] = origin_single_song_detail['al']['picUrl']
                 single_song_detail['album']['name'] = origin_single_song_detail['al']['name']
+
             quality = {}
             quality['h'] = origin_single_song_detail['h']['br'] if origin_single_song_detail['h'] else None  # high
             quality['m'] = origin_single_song_detail['m']['br'] if origin_single_song_detail['m'] else None  # middle
@@ -162,9 +169,13 @@ class NetEase(object):
                 self.download_music_info[quality_id].append(origin_single_song_detail['id'])
             else:
                 self.download_music_info[quality_id] = [origin_single_song_detail['id']]
+
             self.songs_detail[single_song_detail['id']] = single_song_detail
 
     def get_songs_info(self):
+        '''
+            获取音乐文件的信息，包括下载地址，在类中自动实现
+        '''
         target_url = 'http://music.163.com/weapi/song/enhance/player/url?csrf_token=' + self.csrf
         error_song_ids = []
         for (br, ids) in self.download_music_info.items():
@@ -176,51 +187,66 @@ class NetEase(object):
 
             json_ret = json.loads(self.session.post(target_url, data=encrypted_request(data), headers=fake_headers).text)
             if json_ret['code'] == 200:
-                # print(json_ret)
                 json_ret = json_ret['data']
             else:
                 print('Error! Code: %s' % json_ret['code'])
                 error_song_ids.append(ids)
                 continue
             for single_song_detail in json_ret:
-                # print(single_song_detail['url'])
                 if single_song_detail['url']:
                     self.songs_detail[single_song_detail['id']]['url'] = single_song_detail['url']
                     self.songs_detail[single_song_detail['id']]['md5'] = single_song_detail['md5']
                 else:
                     error_song_ids.append(single_song_detail['id'])
+                    self.songs_detail[single_song_detail['id']]['url'] = None
         return error_song_ids
 
     def download_music(self, music_folder, pic_folder, retrytimes):
+        '''
+            根据类中的所有歌曲信息，下载歌曲文件以及歌曲专辑封面
+
+        Args:
+            music_folder<str>:相对于程序目录的文件夹，用于存下载的歌曲
+            pic_folder<str>:相对于程序目录的文件夹，用于存下载的歌曲的专辑封面
+        '''
         for id in self.songs_detail:
             single_song_detail = self.songs_detail[id]
-            # print(single_song_detail['url'])
             file_path = None
             if single_song_detail['url']:
                 file_path = os.path.join(music_folder, single_song_detail['file_name'] + '.mp3')
                 print('Donwload song file: %s' % single_song_detail['file_name'])
+
+                print(single_song_detail['file_name'], single_song_detail['url'])
+
                 download_music_file(single_song_detail['url'],
-                                         file_path,
-                                         file_md5 = single_song_detail['md5'],
-                                         retrytimes=retrytimes)
+                                    file_path,
+                                    file_md5=single_song_detail['md5'],
+                                    retrytimes=retrytimes)
+
             if single_song_detail['album']['picUrl']:
                 pic_path = os.path.join(pic_folder, single_song_detail['file_name'] + '.jpg')
                 download_album_pic(single_song_detail['album']['picUrl'], pic_path)
             modify_mp3(file_path, single_song_detail)
 
     def download_playlist(self, music_folder, pic_folder, retrytimes=3):
+        '''
+            下载歌单，该类的主要func
+
+        Args:
+            music_folder<str>:相对于程序目录的文件夹，用于存下载的歌曲
+            pic_folder<str>:相对于程序目录的文件夹，用于存下载的歌曲的专辑封面
+        '''
+
         origin_playlist_detial = self.get_playlist_detail(self.id)
         self.parse_playlist_detail(origin_playlist_detial)
 
+        # 先用新版api来获取歌曲的信息
         error_songs_ids = self.get_songs_info()
 
+        # 用旧版的api获取一些可能因为版权原因而导致无法下载的歌曲
         error_songs_ids = self.get_songs_detail_old_api(error_songs_ids)
 
-        for id, d in self.songs_detail.items():
-            try:
-                d['url']
-            except:
-                print(id, d['title'])
+        # 下载
         self.download_music(music_folder, pic_folder, retrytimes)
 
         error_songs_detail = []
@@ -268,27 +294,3 @@ class NetEase(object):
             self.songs_detail[song_id]['url'] = url
 
         return error_songs_ids
-
-    def try_again(self):
-        target_url = 'http://music.163.com/weapi/song/enhance/player/url'
-        data = {
-            'ids': [536623441],
-            'br': 999000
-        }
-        fake_headers = {
-            # 'Cookie': 'appver=1.5.2',
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip,deflate,sdch',
-            'Accept-Language': 'zh-CN,zh;q=0.8,gl;q=0.6,zh-TW;q=0.4',
-            'Connection': 'keep-alive',
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Host': 'music.163.com',
-            'Referer': 'http://music.163.com/search/',
-            'X-Real-IP': '27.38.4.87',
-            
-            'User-Agent': ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)'
-                           ' Ubuntu Chromium/56.0.2924.76 Chrome/56.0.2924.76 Safari/537.36')
-        }
-        
-        json_ret = json.loads(self.session.post(target_url, data=encrypted_request(data), headers=fake_headers).text)
-        print(json_ret)

@@ -9,6 +9,15 @@ import requests
 
 
 def download_music_file(url, file_path, file_md5 = None, overwrite=False, retrytimes=3):
+    '''
+        下载音乐文件
+
+    Args:
+        file_path<str>:音乐文件的绝对路径
+        file_md5<str>:网站上传下来的md5值
+        overwrite<bool>:是否覆盖已经存在的文件
+        retrytimes<int>:重试次数，仅在md5值不正确时尝试重试，其余情况直接报错
+    '''
     if os.path.exists(file_path) and not overwrite:
         print('File: %s already exists, skip' % file_path)
         return
@@ -34,6 +43,14 @@ def download_music_file(url, file_path, file_md5 = None, overwrite=False, retryt
 
 
 def download_album_pic(url, file_path, overwrite=False):
+    '''
+        下载专辑封面
+
+    Args:
+        file_path<str>:音乐专辑的绝对路径
+        overwrite<bool>:是否覆盖已经存在的文件
+    '''
+
     if os.path.exists(file_path) and not overwrite:
         print('File: %s already exists, skip' % file_path)
         return
@@ -52,10 +69,10 @@ def modify_mp3(mp3_path, music_info):
         mp3_path<str>:
             mp3文件的路径
         music_info<dict>:
-            title:标题
-            artists:作者
-            album:所属专辑
-            pic_path:专辑封面的路径
+            title<str>:标题
+            artists<str>:作者
+            album<str>:所属专辑
+            pic_path<str>:专辑封面的路径
     '''
     audiofile = eyed3.load(mp3_path)
     audiofile.initTag()
