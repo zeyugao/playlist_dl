@@ -9,7 +9,9 @@ Download playlist from netease
 ## Usage
 
 
-> py main.py playlist_url/playlist_id
+> py main.py playlist_urls/playlist_ids
+
+可以同时添加多条playlist的信息
 
 eg:
 
@@ -19,7 +21,7 @@ Or
 
 > py main.py 907018095
 
-### extra_music_file.txt
+ -  extra_music_file.txt的说明
 
 加入无法在网易云上收藏到歌单中的音乐
 
@@ -54,8 +56,70 @@ eg:
 
 必须添加音乐网站的代码
 
+## 命令行版本
 
-### TOOD
+> -m 或者 --music
+
+指定保存音乐文件的文件夹
+
+> -p 或者 --pic
+
+指定保存专辑封面的文件夹
+
+> -w 或者 wait
+
+下载两个mp3之间的时间间隔
+
+> -e 或者 --extra
+
+指定保存额外的需要下载的歌曲的信息的文件，格式同extra_music_file.txt
+
+## Gui版本
+
+ - Input playlist url or playlist id的Text控件：
+
+ 添加playlist的信息，每行一条，可以是url，也可以是id
+
+---
+
+ - Music folder:
+
+ 保存音乐文件的文件夹，点击Change按钮可以以对话框的形式选择文件夹
+
+---
+
+ - Album picture folder:
+
+ 保存专辑的封面的文件夹，点击Change按钮可以以对话框的形式选择文件夹
+
+---
+
+ - Extra music file:
+
+ 额外的需要下载的歌曲的信息，格式同extra_music_file.txt
+
+ 点击Edit可以打开一个新窗口编辑选择的文件
+
+ 点击Change按钮可以以对话框的形式选择文件
+
+---
+ - Start downloading按钮:
+
+开始下载
+
+---
+
+**下载时，还不能中途暂停、取消**
+
+进度条显示的是当前下载的音乐文件的进度，
+
+## 保存
+
+网易云的歌曲会在文件下生成以用户的昵称以及歌单的id的文件夹
+
+用搜索方式的会保存在extra_music下
+
+## TOOD
 - [ ] 完成music-api-jwzcyzizya.now.sh的搜索
 - [ ] 可选的码率（在args中进行选择）
 
