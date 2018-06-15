@@ -3,10 +3,13 @@
 
 import hashlib
 import os
-
-import eyed3
-import requests
 import platform
+
+import mutagen
+import requests
+from mutagen.easyid3 import EasyID3
+from mutagen.id3 import APIC, ID3, error
+from mutagen.mp3 import MP3
 
 system_str = platform.system()
 USER_FOLDER = None
@@ -18,7 +21,8 @@ else:
 
 progressbar_window = None
 
-def download_music_file(url, file_path,file_name, file_md5 = None, overwrite=False, retrytimes=3):
+
+def download_music_file(url, file_path, file_name, file_md5=None, overwrite=False, retrytimes=3):
     '''
         下载音乐文件
 
@@ -29,7 +33,7 @@ def download_music_file(url, file_path,file_name, file_md5 = None, overwrite=Fal
         retrytimes<int>:重试次数，仅在md5值不正确时尝试重试，其余情况直接报错
     '''
     if progressbar_window:
-        progressbar_window.set_label('Downloading file: %s'%file_name)
+        progressbar_window.set_label('Downloading file: %s' % file_name)
         progressbar_window.set(0)
     if os.path.exists(file_path) and not overwrite:
         print('File: %s already exists, skip' % file_path)
@@ -46,7 +50,7 @@ def download_music_file(url, file_path,file_name, file_md5 = None, overwrite=Fal
         for chunk in respond.iter_content(chunk_size=1024):
             if chunk:
                 if progressbar_window:
-                    progressbar_window.step(102400/file_lenght)
+                    progressbar_window.step(102400 / file_lenght)
                 current_file_md5.update(chunk)
                 file.write(chunk)
     if not file_md5:
@@ -91,21 +95,24 @@ def modify_mp3(mp3_path, music_info):
             album<str>:所属专辑
             pic_path<str>:专辑封面的路径
     '''
-    audiofile = eyed3.load(mp3_path)
-    audiofile.initTag()
-    if 'artists' in music_info and not audiofile.tag.artist:
-        audiofile.tag.artist = music_info['artists']
-    if 'title' in music_info and not audiofile.tag.title:
-        audiofile.tag.title = music_info['title']
-    if 'album' in music_info and not audiofile.tag.album:
-        audiofile.tag.album = music_info['album']['name']
+    try:
+        audiofile = EasyID3(mp3_path)
+    except:
+        audiofile = mutagen.File(mp3_path, easy=True)
+        audiofile.add_tags()
+    if 'artists' in music_info and not 'artist' in audiofile:
+        audiofile['artist'] = music_info['artists'].split(';')
+        audiofile['albumartist'] = music_info['artists'].split(';')
+    if 'title' in music_info and not 'title' in audiofile:
+        audiofile['title'] = music_info['title']
+    if 'album' in music_info and not 'album' in audiofile:
+        audiofile['album'] = music_info['album']['name']
+    if 'date' in music_info and not 'date' in audiofile:
+        audiofile['date'] = music_info['date']
+    audiofile.save(v2_version=3)
+    audiofile = ID3(mp3_path)
     if 'pic_path' in music_info:
         if os.path.exists(music_info['pic_path']):
             with open(music_info['pic_path'], 'rb') as pic_file:
-                imagedata = pic_file.read()
-                audiofile.tag.images.set(3, imagedata, 'image/jpeg', u'')
-    if 'time' in music_info and not audiofile.tag.publisher:
-        audiofile.tag.recording_date = music_info['time']
-    if 'company' in music_info and not audiofile.tag.publisher:
-        audiofile.tag.publisher = music_info['company']
-    audiofile.tag.save()
+                audiofile['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, desc=u'Cover', data=pic_file.read())
+    audiofile.save(v2_version=3)

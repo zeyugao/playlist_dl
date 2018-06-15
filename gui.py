@@ -257,8 +257,8 @@ class MainWindow(object):
 
     def callback_thread(self,finished):
         if finished:
-            self.finish_download()
             self.progress_window.destory()
+            self.finish_download()
 
     def finish_download(self):
         self.enable_widget()

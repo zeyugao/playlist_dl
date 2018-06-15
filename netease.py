@@ -162,6 +162,8 @@ class NetEase(object):
             if 'al' in origin_single_song_detail and origin_single_song_detail['al']:
                 single_song_detail['album']['picUrl'] = origin_single_song_detail['al']['picUrl']
                 single_song_detail['album']['name'] = origin_single_song_detail['al']['name']
+                
+            single_song_detail['date'] = str(time.localtime(origin_single_song_detail['publishTime'] / 1000)[0])
 
             quality = {}
             quality['h'] = origin_single_song_detail['h']['br'] if origin_single_song_detail['h'] else None  # high
@@ -230,6 +232,7 @@ class NetEase(object):
             if single_song_detail['album']['picUrl']:
                 pic_path = os.path.join(pic_folder, single_song_detail['file_name'] + '.jpg')
                 download_album_pic(single_song_detail['album']['picUrl'], pic_path)
+                single_song_detail['pic_path'] = pic_path
             modify_mp3(file_path, single_song_detail)
 
     def download_playlist(self, music_folder, pic_folder, retrytimes=3):
