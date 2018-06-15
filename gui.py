@@ -10,14 +10,14 @@ from time import sleep
 import threading
 
 import tools
-from download_main import download_playist
+import download_main
 
 
 class ProgressBarWindow(object):
     def __init__(self, parent_window):
         self.root = tkinter.Toplevel(parent_window)
         self.root.title('')
-        # self.root.config(width=1000, height=100)
+        self.root.config(width=600, height=70)
         self.root.resizable(0, 0)
         self.root.protocol("WM_DELETE_WINDOW", self.diable_close_window)
 
@@ -37,10 +37,11 @@ class ProgressBarWindow(object):
 
     def place_widget(self):
         self.label = ttk.Label(self.root,text = 'Fetching playlist detail')
-        self.label.pack(fill=tkinter.X, padx=10,pady = 5)
+        self.label.place(x = 10,y = 10)
 
-        self.progressbar = ttk.Progressbar(self.root, mode='determinate',length = 300)
-        self.progressbar.pack(fill=tkinter.X, padx=10,pady = 5)
+
+        self.progressbar = ttk.Progressbar(self.root, mode='determinate',length = 580)
+        self.progressbar.place(x = 10,y = 40,height = 20)
         self.progressbar['value'] = 0
         self.progressbar['maximum'] = 100
 
@@ -276,9 +277,10 @@ class DownloadThread(threading.Thread):
         self.progressbar_window = args['progressbar_window']
 
     def run(self):
+        download_main.ne.set_wait_interval(1)
         for playlist in self.args['playlists']:
             if not playlist == '':
-                download_playist(playlist, self.args['music_folder'], self.args['pic_folder'], self.args['extra_music_file'])
+                download_main.download_playist(playlist, self.args['music_folder'], self.args['pic_folder'], self.args['extra_music_file'])
         
         self.args['callback'](True)
         raise SystemExit
