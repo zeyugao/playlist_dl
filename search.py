@@ -25,7 +25,10 @@ class Sonimei(object):
                             qingting    ximalaya
                             kg      5singyc 5singfc
         '''
+
         search_result = self.search(song_title, song_author, type)
+        if search_result is None:
+            return False
         del search_result['lrc']
 
         artists = search_result['author'].split(',')
@@ -41,8 +44,8 @@ class Sonimei(object):
             file_name = file_name + ' - ' + search_result['title']
         file_path = os.path.join(music_folder, file_name + '.mp3')
 
-        print(file_name,search_result['url'])
-        download_music_file(search_result['url'], file_path)
+        print(file_name, search_result['url'])
+        download_music_file(search_result['url'], file_name + '.mp3', file_path)
         pic_path = os.path.join(pic_folder, file_name + '.jpg')
         download_album_pic(search_result['pic'], pic_path)
 
@@ -54,6 +57,7 @@ class Sonimei(object):
         if song_album and not song_album == '':
             music_info['album'] = song_album
         modify_mp3(file_path, music_info)
+        return True
 
     def search(self, song_title, song_author, type, retrytimes=3):
         target_url = 'http://music.sonimei.cn/'

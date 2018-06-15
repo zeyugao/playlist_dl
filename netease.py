@@ -92,18 +92,18 @@ class NetEase(object):
         '''
             设置歌单id
         '''
-        self.id = id
+        self.playlist_id = id
 
     def set_playlist_url(self, url):
         '''
             设置歌单url
         '''
-        self.id = url.split('playlist?id=')[1]
+        self.playlist_id = url.split('playlist?id=')[1]
 
     def get_playlist_detail(self, playlist_id):
         target_url = 'http://music.163.com/weapi/v3/playlist/detail?csrf_token=' + self.csrf
         data = {
-            'id': self.id,
+            'id': self.playlist_id,
             'offset': 0,
             'total': 'true',
             'limit': 5000,
@@ -111,6 +111,9 @@ class NetEase(object):
             'csrf_token': self.csrf
         }
         ret_json = json.loads(self.session.post(target_url, data=encrypted_request(data), headers=fake_headers).text)
+
+        # 获取用户的昵称，用于创建文件夹
+        self.user_nickname = ret_json['playlist']['creator']['nickname']
         if(ret_json['code'] == 200):
             return ret_json['playlist']['tracks']
         else:
@@ -141,7 +144,7 @@ class NetEase(object):
         self.download_music_info = {}
         for origin_single_song_detail in origin_playlist_detial:
             single_song_detail = {}
-            single_song_detail['title'] = origin_single_song_detail['name']
+            single_song_detail['title'] = origin_single_song_detail['name'].replace(u'\xa0', u' ')
             single_song_detail['album'] = {}
             single_song_detail['artists'] = ''
             for artist in origin_single_song_detail['ar']:
@@ -206,8 +209,8 @@ class NetEase(object):
             根据类中的所有歌曲信息，下载歌曲文件以及歌曲专辑封面
 
         Args:
-            music_folder<str>:相对于程序目录的文件夹，用于存下载的歌曲
-            pic_folder<str>:相对于程序目录的文件夹，用于存下载的歌曲的专辑封面
+            music_folder<str>:文件夹，用于存下载的歌曲
+            pic_folder<str>:文件夹，用于存下载的歌曲的专辑封面
         '''
         for id in self.songs_detail:
             single_song_detail = self.songs_detail[id]
@@ -216,10 +219,11 @@ class NetEase(object):
                 file_path = os.path.join(music_folder, single_song_detail['file_name'] + '.mp3')
                 print('Donwload song file: %s' % single_song_detail['file_name'])
 
-                print(single_song_detail['file_name'], single_song_detail['url'])
+                # print(single_song_detail['file_name'], single_song_detail['url'])
 
                 download_music_file(single_song_detail['url'],
                                     file_path,
+                                    single_song_detail['file_name'] + '.mp3',
                                     file_md5=single_song_detail['md5'],
                                     retrytimes=retrytimes)
 
@@ -233,12 +237,20 @@ class NetEase(object):
             下载歌单，该类的主要func
 
         Args:
-            music_folder<str>:相对于程序目录的文件夹，用于存下载的歌曲
-            pic_folder<str>:相对于程序目录的文件夹，用于存下载的歌曲的专辑封面
+            music_folder<str>:文件夹，用于存下载的歌曲
+            pic_folder<str>:文件夹，用于存下载的歌曲的专辑封面
         '''
 
-        origin_playlist_detial = self.get_playlist_detail(self.id)
+        origin_playlist_detial = self.get_playlist_detail(self.playlist_id)
         self.parse_playlist_detail(origin_playlist_detial)
+
+        music_folder = os.path.join(music_folder, self.user_nickname + '\\' + self.playlist_id)
+        pic_folder = os.path.join(pic_folder, self.user_nickname + '\\' + self.playlist_id)
+
+        if not os.path.exists(music_folder):
+            os.makedirs(music_folder)
+        if not os.path.exists(pic_folder):
+            os.makedirs(pic_folder)
 
         # 先用新版api来获取歌曲的信息
         error_songs_ids = self.get_songs_info()

@@ -6,9 +6,19 @@ import os
 
 import eyed3
 import requests
+import platform
 
+system_str = platform.system()
+USER_FOLDER = None
 
-def download_music_file(url, file_path, file_md5 = None, overwrite=False, retrytimes=3):
+if system_str == 'Windows':
+    USER_FOLDER = os.path.expandvars("%USERPROFILE%")
+else:
+    USER_FOLDER = os.path.expanduser("~")
+
+progressbar_window = None
+
+def download_music_file(url, file_path,file_name, file_md5 = None, overwrite=False, retrytimes=3):
     '''
         下载音乐文件
 
@@ -18,8 +28,13 @@ def download_music_file(url, file_path, file_md5 = None, overwrite=False, retryt
         overwrite<bool>:是否覆盖已经存在的文件
         retrytimes<int>:重试次数，仅在md5值不正确时尝试重试，其余情况直接报错
     '''
+    if progressbar_window:
+        progressbar_window.set_label('Downloading file: %s'%file_name)
+        progressbar_window.set(0)
     if os.path.exists(file_path) and not overwrite:
         print('File: %s already exists, skip' % file_path)
+        if progressbar_window:
+            progressbar_window.set(100)
         return
     if os.path.exists(file_path):
         os.remove(file_path)
@@ -30,6 +45,8 @@ def download_music_file(url, file_path, file_md5 = None, overwrite=False, retryt
     with open(file_path, 'wb') as file:
         for chunk in respond.iter_content(chunk_size=1024):
             if chunk:
+                if progressbar_window:
+                    progressbar_window.step(102400/file_lenght)
                 current_file_md5.update(chunk)
                 file.write(chunk)
     if not file_md5:
