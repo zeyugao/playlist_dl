@@ -2,15 +2,15 @@
 # python3
 
 import os
+import threading
 import tkinter
 import tkinter.scrolledtext
+from time import sleep
 from tkinter import messagebox, ttk
 from tkinter.filedialog import askdirectory, askopenfilename
-from time import sleep
-import threading
 
-import tools
 import download_main
+import tools
 
 
 class ProgressBarWindow(object):
@@ -23,8 +23,9 @@ class ProgressBarWindow(object):
 
         self.progressbar = {}
 
-    def set_label(self,text):
+    def set_label(self, text):
         self.label['text'] = text
+
     def step(self, step):
         self.progressbar.step(step)
         self.progressbar.update()
@@ -36,12 +37,11 @@ class ProgressBarWindow(object):
         self.root.destroy()
 
     def place_widget(self):
-        self.label = ttk.Label(self.root,text = 'Fetching playlist detail')
-        self.label.place(x = 10,y = 10)
+        self.label = ttk.Label(self.root, text='Fetching playlist detail')
+        self.label.place(x=10, y=10)
 
-
-        self.progressbar = ttk.Progressbar(self.root, mode='determinate',length = 580)
-        self.progressbar.place(x = 10,y = 40,height = 20)
+        self.progressbar = ttk.Progressbar(self.root, mode='determinate', length=580)
+        self.progressbar.place(x=10, y=40, height=20)
         self.progressbar['value'] = 0
         self.progressbar['maximum'] = 100
 
@@ -247,16 +247,16 @@ class MainWindow(object):
         self.progress_window.place_widget()
         tools.progressbar_window = self.progress_window
         download_thread = DownloadThread({
-            'playlists':contents,
-            'music_folder':self.music_folder,
-            'pic_folder':self.pic_folder,
-            'extra_music_file':self.extra_music_file,
-            'progressbar_window':self.progress_window,
-            'callback':self.callback_thread
+            'playlists': contents,
+            'music_folder': self.music_folder,
+            'pic_folder': self.pic_folder,
+            'extra_music_file': self.extra_music_file,
+            'progressbar_window': self.progress_window,
+            'callback': self.callback_thread
         })
         download_thread.start()
 
-    def callback_thread(self,finished):
+    def callback_thread(self, finished):
         if finished:
             self.progress_window.destory()
             self.finish_download()
@@ -281,6 +281,6 @@ class DownloadThread(threading.Thread):
         for playlist in self.args['playlists']:
             if not playlist == '':
                 download_main.download_playist(playlist, self.args['music_folder'], self.args['pic_folder'], self.args['extra_music_file'])
-        
+
         self.args['callback'](True)
         raise SystemExit

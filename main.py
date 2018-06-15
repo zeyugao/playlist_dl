@@ -1,11 +1,12 @@
 # encoding=utf-8
 # python3
-from gui import MainWindow
-import download_main
-import sys
 import getopt
 import os
+import sys
+
+import download_main
 import tools
+from gui import MainWindow
 
 
 def main():
@@ -16,7 +17,7 @@ def main():
         window.mainloop()
     else:
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "m:p:w:", ["music=", "pic=",'wait='])
+            opts, args = getopt.getopt(sys.argv[1:], "m:p:w:", ["music=", "pic=", 'wait='])
         except getopt.GetoptError:
             # print help information and exit:
             print('Error: GetoptError')
@@ -24,12 +25,12 @@ def main():
         music_folder = None
         pic_folder = None
         wait_time = 0
-        for o,a in opts:
-            if o in ('-m','--music'):
+        for o, a in opts:
+            if o in ('-m', '--music'):
                 music_folder = a
-            if o in ('-p','--pic'):
+            if o in ('-p', '--pic'):
                 pic_folder = a
-            if o in ('-w','wait'):
+            if o in ('-w', 'wait'):
                 wait_time = a
         if not music_folder or not os.path.exists(music_folder):
             music_folder = os.path.join(tools.USER_FOLDER, 'music_save')

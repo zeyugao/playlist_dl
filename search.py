@@ -1,10 +1,12 @@
 # encoding=utf-8
 # python3
 
-import requests
 import json
 import os
-from tools import (download_music_file, download_album_pic, modify_mp3)
+
+import requests
+
+from tools import download_album_pic, download_music_file, modify_mp3
 
 
 class Sonimei(object):

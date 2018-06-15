@@ -1,9 +1,10 @@
 # encoding=utf-8
 # python3
 import os
-from netease import NetEase
-import tools
+
 import search
+import tools
+from netease import NetEase
 
 ne = NetEase()
 

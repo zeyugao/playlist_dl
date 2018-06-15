@@ -5,14 +5,13 @@ import base64
 import binascii
 import hashlib
 import json
-import hashlib
 import os
 import time
 
 import requests
 from Crypto.Cipher import AES
 
-from tools import (download_music_file, download_album_pic, modify_mp3)
+from tools import download_album_pic, download_music_file, modify_mp3
 
 MODULUS = ('00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7'
            'b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280'
