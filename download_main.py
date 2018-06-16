@@ -27,41 +27,9 @@ def read_extra_music(extra_music_file):
     return extra_music
 
 
-def download_playist(playlist,
-                     music_folder,
-                     pic_folder,
-                     extra_music_file=None,
-                     privilege={1: 'h', 0: 'm', 2: 'l'}):
-    '''
-        下载歌单
-    Args:
-        playlist<str>:歌单的url或者id
-        music_folder<str>:文件夹，用于存下载的歌曲
-        pic_folder<str>:文件夹，用于存下载的歌曲的专辑封面
-        extra_music_file<str>:文件，加入额外的音乐
-        privilege<dict>:优先级
-    '''
-    # 检查目录
-    if not os.path.exists(music_folder):
-        os.makedirs(music_folder)
-    if not os.path.exists(pic_folder):
-        os.makedirs(pic_folder)
-
+def download_songs_via_searching(songs_detail, music_folder, pic_folder, extra_music_file=None):
     search_songs_list = []
 
-    if playlist.isdigit():
-        ne.set_playlist_id(playlist)
-    else:
-        ne.set_playlist_url(playlist)
-    error_songs_detail = ne.download_playlist(music_folder=music_folder, pic_folder=pic_folder)
-
-    for error_song in error_songs_detail:
-        search_songs_list.append({
-            'title': error_song['title'],
-            'artists': error_song['artists'].replace(';', ' '),
-            'album': error_song['album']['name'],
-            'type': 'qq'
-        })
     if not extra_music_file:
         extra_music_file = os.path.join(tools.USER_FOLDER, 'extra_music_file.txt')
     search_songs_list.extend(read_extra_music(extra_music_file))
@@ -77,3 +45,39 @@ def download_playist(playlist,
     for single_song in search_songs_list:
         if not s.download_song(single_song['title'], single_song['artists'], single_song['album'], music_folder, pic_folder, single_song['type']):
             new_error_song.append(single_song['artists'] + ' - ' + single_song['title'])
+    return new_error_song
+
+
+def download_netease_playist(playlist,
+                             music_folder,
+                             pic_folder,
+                             privilege={1: 'h', 0: 'm', 2: 'l'}):
+    '''
+        下载歌单
+    Args:
+        playlist<str>:歌单的url或者id
+        music_folder<str>:文件夹，用于存下载的歌曲
+        pic_folder<str>:文件夹，用于存下载的歌曲的专辑封面
+        extra_music_file<str>:文件，加入额外的音乐
+        privilege<dict>:优先级
+    '''
+    # 检查目录
+    if not os.path.exists(music_folder):
+        os.makedirs(music_folder)
+    if not os.path.exists(pic_folder):
+        os.makedirs(pic_folder)
+
+    if playlist.isdigit():
+        ne.set_playlist_id(playlist)
+    else:
+        ne.set_playlist_url(playlist)
+    error_songs_detail = ne.download_playlist(music_folder=music_folder, pic_folder=pic_folder)
+    error_songs_list = []
+    for error_song in error_songs_detail:
+        error_songs_list.append({
+            'title': error_song['title'],
+            'artists': error_song['artists'].replace(';', ' '),
+            'album': error_song['album']['name'],
+            'type': 'qq'
+        })
+    return error_songs_list

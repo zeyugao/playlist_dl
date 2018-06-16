@@ -95,6 +95,7 @@ def modify_mp3(mp3_path, music_info):
             album<str>:所属专辑
             pic_path<str>:专辑封面的路径
     '''
+    print('Modify mp3 ID3 for song: %s' % music_info['file_name'])
     try:
         audiofile = EasyID3(mp3_path)
     except:

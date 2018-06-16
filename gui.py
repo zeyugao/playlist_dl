@@ -278,9 +278,16 @@ class DownloadThread(threading.Thread):
 
     def run(self):
         download_main.ne.set_wait_interval(1)
+        error_songs_list = []
         for playlist in self.args['playlists']:
             if not playlist == '':
-                download_main.download_playist(playlist, self.args['music_folder'], self.args['pic_folder'], self.args['extra_music_file'])
+                error_songs_list.append(download_main.download_netease_playist(playlist, self.args['music_folder'], self.args['pic_folder']))
+        error_songs_list = download_main.download_songs_via_searching(error_songs_list,self.args['music_folder'], self.args['pic_folder'], self.args['extra_music_file'])
 
+        if len(error_songs_list):
+            text = ''
+            for detail in error_songs_list:
+                text = text + detail + '\n'
+            messagebox.showerror('Error','The following songs can not be downloaded:\n%s' % text)
         self.args['callback'](True)
         raise SystemExit
