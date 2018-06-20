@@ -21,6 +21,16 @@ Or
 
 > py main.py 907018095
 
+可以一次进行多个playlist的下载
+
+eg:
+
+> py main.py http://music.163.com/#/playlist?id=907018095 http://music.163.com/#/playlist?id=123656572
+
+Or
+
+> py main.py 907018095 123656572 58084349
+
  -  extra_music_file.txt的说明
 
 加入无法在网易云上收藏到歌单中的音乐
@@ -119,6 +129,34 @@ eg:
 
 用搜索方式的会保存在extra_music下
 
+目录结构(eg)：
+```
+music_save
+├─User_1
+│  ├─907018095
+│  │  ├─Taylor Swift - Love Story.mp3
+│  │  └─Taylor Swift - Innocent.mp3
+|  └─123656572
+│     └─Taylor Swift - Back To December.mp3
+├─User_2
+│  ├─901248095
+│  │  └─Taylor Swift - Love Story.mp3
+│  └─165475572
+│     └─Taylor Swift - Back To December.mp3
+└─extra_music
+   └─Ed Sheeran - Perfect.mp3
+```
+
+
+## 要求/Requirements
+
+```
+Python3
+requests
+pycryptodome
+mutagen
+```
+lastest version is enough
 ## TOOD
 - [ ] 完成music-api-jwzcyzizya.now.sh的搜索
 - [ ] 可选的码率（在args中进行选择）
