@@ -94,14 +94,14 @@ def modify_mp3(mp3_path, music_info):
     except:
         audiofile = mutagen.File(mp3_path, easy=True)
         audiofile.add_tags()
-    if 'artists' in music_info and not 'artist' in audiofile:
+    if 'artists' in music_info:  # and not 'artist' in audiofile:
         audiofile['artist'] = music_info['artists'].split(';')
         audiofile['albumartist'] = music_info['artists'].split(';')
-    if 'title' in music_info and not 'title' in audiofile:
+    if 'title' in music_info:  # and not 'title' in audiofile:
         audiofile['title'] = music_info['title']
-    if 'album' in music_info and not 'album' in audiofile:
+    if 'album' in music_info:  # and not 'album' in audiofile:
         audiofile['album'] = music_info['album']['name']
-    if 'date' in music_info and not 'date' in audiofile:
+    if 'date' in music_info:  # and not 'date' in audiofile:
         audiofile['date'] = music_info['date']
     audiofile.save(v2_version=3)
     audiofile = ID3(mp3_path)
