@@ -28,6 +28,8 @@ def read_extra_music(extra_music_file):
 
 
 def download_songs_via_searching(songs_detail, music_folder, pic_folder, extra_music_file=None):
+    tools.progressbar_window.set_label_searching_song()
+
     search_songs_list = []
 
     if not extra_music_file:
@@ -42,7 +44,11 @@ def download_songs_via_searching(songs_detail, music_folder, pic_folder, extra_m
         os.makedirs(extra_music_folder)
     new_error_song = []
     s = search.Sonimei()
+
+    current_song_index = 0
     for single_song in search_songs_list:
+        current_song_index += 1
+        tools.progressbar_window.set_playlist_progress(current_song_index, len(search_songs_list))
         if not s.download_song(single_song['title'], single_song['artists'], single_song['album'], music_folder, pic_folder, single_song['type']):
             new_error_song.append(single_song['artists'] + ' - ' + single_song['title'])
     return new_error_song

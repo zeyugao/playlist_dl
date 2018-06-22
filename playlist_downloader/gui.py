@@ -17,35 +17,81 @@ class ProgressBarWindow(object):
     def __init__(self, parent_window):
         self.root = tkinter.Toplevel(parent_window)
         self.root.title('')
-        self.root.config(width=600, height=70)
+        self.root.config(width=500, height=110)
         self.root.resizable(0, 0)
         self.root.protocol("WM_DELETE_WINDOW", self.diable_close_window)
 
-        self.progressbar = {}
+    def set_label_single_song_progress(self, text):
+        '''当前正在下载的歌曲'''
+        self.label_single_song_progress['text'] = text
 
-    def set_label(self, text):
-        self.label['text'] = text
+    def set_label_searching_song(self):
+        '''
+            使用搜索下载无法直接从网易云上下载的歌曲
+            强行占用显示total_progress的Label:label_total_progress
+        '''
+        self.label_total_progress['text'] = 'Searching songs'
 
-    def step(self, step):
-        self.progressbar.step(step)
-        self.progressbar.update()
+    def set_label_total_progress(self, current_playlist_index, total_playlist_num):
+        '''多个Playlist，现在下载到第几个Playlist'''
+        self.label_total_progress['text'] = "Playlist: %d/%d" % (current_playlist_index, total_playlist_num)
 
-    def set(self, value):
-        self.progressbar['value'] = value
+    def set_playlist_progress(self, current_song_index, total_song_index):
+        '''当前的Playlist下载到第几首歌'''
+        self.label_playlist_progress['text'] = 'Song: %d/%d' % (current_song_index, total_song_index)
+        self.progressbar_playlist_progress['value'] = current_song_index * 100 / total_song_index
+
+    def step_single_song_progress(self, step):
+        '''当前正在下载的歌曲的进度，step'''
+        self.progressbar_single_song.step(step)
+        self.progressbar_single_song.update()
+
+    def set_single_song_progress(self, value):
+        '''当前正在下载的歌曲的进度，set'''
+        self.progressbar_single_song['value'] = value
 
     def destory(self):
         self.root.destroy()
 
     def place_widget(self):
-        self.label = ttk.Label(self.root, text='Fetching playlist detail')
-        self.label.place(x=10, y=10)
+        # Label
+        # 当前正在下载的歌曲
+        self.label_single_song_progress = ttk.Label(self.root, text='Fetching playlist detail')
+        self.label_single_song_progress.place(x=10, y=10)
 
-        self.progressbar = ttk.Progressbar(self.root, mode='determinate', length=580)
-        self.progressbar.place(x=10, y=40, height=20)
-        self.progressbar['value'] = 0
-        self.progressbar['maximum'] = 100
+        # 进度条
+        # 当前正在下载的歌曲的进度
+        self.progressbar_single_song = ttk.Progressbar(self.root, mode='determinate', length=480)
+        self.progressbar_single_song.place(x=10, y=40, height=15)
+        self.progressbar_single_song['value'] = 0
+        self.progressbar_single_song['maximum'] = 100
+
+        # Label
+        # 多个Playlist，现在下载到第几个Playlist
+        self.label_total_progress = ttk.Label(self.root, text='Playlist: NaN/NaN')
+        self.label_total_progress.place(x=10, y=60)
+
+        # Label
+        # 当前的Playlist下载到第几首歌
+        self.label_playlist_progress = ttk.Label(self.root, text='Song: NaN/NaN')
+        self.label_playlist_progress.place(x=150, y=60)
+
+        # 进度条
+        # 当前的Playlist下载的进度
+        self.progressbar_playlist_progress = ttk.Progressbar(self.root, mode='determinate', length=480)
+        self.progressbar_playlist_progress.place(x=10, y=85, height=15)
+        self.progressbar_playlist_progress['value'] = 0
+        self.progressbar_playlist_progress['maximum'] = 100
 
     def diable_close_window(self):
+        # result = messagebox.askyesno('', 'Do you want to force to stop downloading?', parent=self.root)
+        # if result:
+        #     # TODO
+        #     # 删除未下载完的临时歌曲文件
+        #     messagebox.showerror('Maybe, some songs are not completely downloaded', parent=self.root)
+        #     self.destory()
+        # else:
+        #     pass
         pass
 
 
@@ -278,16 +324,25 @@ class DownloadThread(threading.Thread):
 
     def run(self):
         download_main.ne.set_wait_interval(1)
+
+        sleep(3)
         error_songs_list = []
+
+        while '' in self.args['playlists']:
+            self.args['playlists'].remove('')
+
+        i = 0
         for playlist in self.args['playlists']:
-            if not playlist == '':
-                error_songs_list.append(download_main.download_netease_playist(playlist, self.args['music_folder'], self.args['pic_folder']))
-        error_songs_list = download_main.download_songs_via_searching(error_songs_list,self.args['music_folder'], self.args['pic_folder'], self.args['extra_music_file'])
+            i += 1
+            self.progressbar_window.set_label_total_progress(i, len(self.args['playlists']))
+            error_songs_list.append(download_main.download_netease_playist(playlist, self.args['music_folder'], self.args['pic_folder']))
+
+        error_songs_list = download_main.download_songs_via_searching(error_songs_list, self.args['music_folder'], self.args['pic_folder'], self.args['extra_music_file'])
 
         if len(error_songs_list):
             text = ''
             for detail in error_songs_list:
                 text = text + detail + '\n'
-            messagebox.showerror('Error','The following songs can not be downloaded:\n%s' % text)
+            messagebox.showerror('Error', 'The following songs can not be downloaded:\n%s' % text)
         self.args['callback'](True)
         raise SystemExit

@@ -12,7 +12,7 @@ import requests
 from Crypto.Cipher import AES
 
 from .tools import download_album_pic, download_music_file, modify_mp3
-
+from . import tools
 MODULUS = ('00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7'
            'b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280'
            '104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932'
@@ -162,7 +162,7 @@ class NetEase(object):
             if 'al' in origin_single_song_detail and origin_single_song_detail['al']:
                 single_song_detail['album']['picUrl'] = origin_single_song_detail['al']['picUrl']
                 single_song_detail['album']['name'] = origin_single_song_detail['al']['name']
-                
+
             single_song_detail['date'] = str(time.localtime(origin_single_song_detail['publishTime'] / 1000)[0])
 
             quality = {}
@@ -206,7 +206,8 @@ class NetEase(object):
                     error_song_ids.append(single_song_detail['id'])
                     self.songs_detail[single_song_detail['id']]['url'] = None
         return error_song_ids
-    def set_wait_interval(self,interval):
+
+    def set_wait_interval(self, interval):
         self.interval = interval
 
     def download_music(self, music_folder, pic_folder, retrytimes):
@@ -217,10 +218,14 @@ class NetEase(object):
             music_folder<str>:文件夹，用于存下载的歌曲
             pic_folder<str>:文件夹，用于存下载的歌曲的专辑封面
         '''
+        current_song_index = 0
         for id in self.songs_detail:
             single_song_detail = self.songs_detail[id]
             file_path = None
             if single_song_detail['url']:
+                current_song_index += 1
+                if tools.progressbar_window:
+                    tools.progressbar_window.set_playlist_progress(current_song_index, self.playlist_total_song_num)
                 file_path = os.path.join(music_folder, single_song_detail['file_name'] + '.mp3')
                 print('Donwload song file: %s' % single_song_detail['file_name'])
 
@@ -239,6 +244,7 @@ class NetEase(object):
                 download_album_pic(single_song_detail['album']['picUrl'], pic_path)
                 single_song_detail['pic_path'] = pic_path
             modify_mp3(file_path, single_song_detail)
+            print()
 
     def download_playlist(self, music_folder, pic_folder, retrytimes=3):
         '''
@@ -265,6 +271,8 @@ class NetEase(object):
 
         # 用旧版的api获取一些可能因为版权原因而导致无法下载的歌曲
         error_songs_ids = self.get_songs_detail_old_api(error_songs_ids)
+
+        self.playlist_total_song_num = len(self.songs_detail) - len(error_songs_ids)
 
         # 下载
         self.download_music(music_folder, pic_folder, retrytimes)
