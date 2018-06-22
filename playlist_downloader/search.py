@@ -5,6 +5,7 @@ import json
 import os
 
 import requests
+import difflib
 
 from .tools import download_album_pic, download_music_file, modify_mp3
 
@@ -47,19 +48,37 @@ class Sonimei(object):
         file_path = os.path.join(music_folder, file_name + '.mp3')
 
         print(file_name, search_result['url'])
-        download_music_file(search_result['url'], file_name + '.mp3', file_path)
+        download_music_file(search_result['url'], file_path=file_path, file_name=(file_name + '.mp3'))
         pic_path = os.path.join(pic_folder, file_name + '.jpg')
         download_album_pic(search_result['pic'], pic_path)
 
         music_info = {
             'title': search_result['title'],
             'artists': search_result['author'].replace(',', ';'),
-            'pic_path': pic_path
+            'pic_path': pic_path,
+            'file_name': file_name
         }
         if song_album and not song_album == '':
             music_info['album'] = song_album
         modify_mp3(file_path, music_info)
         return True
+
+    def best_match(self, song_title, song_author, all_songs_detail):
+        highest_ratio = 0
+        highest_index = 0
+        index = 0
+        for song_detail in all_songs_detail:
+            ratio_title = difflib.SequenceMatcher(None, song_title, song_detail['title']).ratio() * 100
+            ratio_author = difflib.SequenceMatcher(None, song_author, song_detail['author']).ratio() * 100
+            if ratio_author * ratio_title > highest_ratio:
+                highest_ratio = ratio_author * ratio_title
+                highest_index = index
+
+                # 完全匹配，而且在搜索中优先级比其他的高，直接跳出了
+                if highest_ratio == 100 * 100:
+                    return song_detail
+            index += 1
+        return all_songs_detail[highest_index]
 
     def search(self, song_title, song_author, type, retrytimes=3):
         target_url = 'http://music.sonimei.cn/'
@@ -69,7 +88,7 @@ class Sonimei(object):
             'cache-control': 'max-age=0',
             'user-agent': ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                            ' (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36'),
-            'Referer': 'http://music.sonimei.cn/?name=%s%s&type=%s' % (song_title.encode('utf-8'), song_author.encode('utf-8'), type),
+            # 'Referer': 'http://music.sonimei.cn/?name=%s%s&type=%s',  # % (song_title, song_author, type),
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'Origin': 'http://music.sonimei.cn',
             'X-Requested-With': 'XMLHttpRequest',
@@ -88,9 +107,11 @@ class Sonimei(object):
                 response.encoding = 'utf-8'
                 json_ret = json.loads(response.text)
                 if json_ret['code'] == 200:
-                    return json_ret['data'][0]
+                    return self.best_match(song_title, song_author, json_ret['data'])
+                retrytimes = retrytimes - 1
             except IndexError:
                 retrytimes = retrytimes - 1
+        print('Download failed, song: %s - %s' % (song_author, song_title))
         return None
 
 

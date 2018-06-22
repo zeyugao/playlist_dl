@@ -14,7 +14,7 @@ def read_extra_music(extra_music_file):
     if not os.path.exists(extra_music_file):
         return []
     extra_music = []
-    with open(extra_music_file, 'r') as file:
+    with open(extra_music_file, 'r', encoding='utf-8') as file:
         for line in file.readlines():
             if line.startswith('#'):
                 continue
@@ -23,13 +23,14 @@ def read_extra_music(extra_music_file):
                 'title': splited_line[0],
                 'artists': splited_line[1],
                 'album': splited_line[2],
-                'type': splited_line[3]
+                'type': splited_line[3].replace('\n', '')
             })
     return extra_music
 
 
 def download_songs_via_searching(songs_detail, music_folder, pic_folder, extra_music_file=None):
-    tools.progressbar_window.set_label_searching_song()
+    if tools.progressbar_window:
+        tools.progressbar_window.set_label_searching_song()
 
     search_songs_list = []
 
@@ -40,17 +41,19 @@ def download_songs_via_searching(songs_detail, music_folder, pic_folder, extra_m
     if not os.path.exists(extra_music_folder):
         os.makedirs(extra_music_folder)
 
-    extra_music_folder = os.path.join(configuration.config.get_config('pic_folder'), 'extra_music')
-    if not os.path.exists(extra_music_folder):
-        os.makedirs(extra_music_folder)
+    extra_pic_folder = os.path.join(configuration.config.get_config('pic_folder'), 'extra_music')
+    if not os.path.exists(extra_pic_folder):
+        os.makedirs(extra_pic_folder)
     new_error_song = []
     s = search.Sonimei()
 
     current_song_index = 0
     for single_song in search_songs_list:
         current_song_index += 1
-        tools.progressbar_window.set_playlist_progress(current_song_index, len(search_songs_list))
-        if not s.download_song(single_song['title'], single_song['artists'], single_song['album'], music_folder, pic_folder, single_song['type']):
+        if tools.progressbar_window:
+            tools.progressbar_window.set_label_single_song_progress('Searching music: %s - %s' % (single_song['artists'], single_song['title']))
+            tools.progressbar_window.set_playlist_progress(current_song_index, len(search_songs_list))
+        if not s.download_song(single_song['title'], single_song['artists'], single_song['album'], extra_music_folder, extra_pic_folder, single_song['type']):
             new_error_song.append(single_song['artists'] + ' - ' + single_song['title'])
     return new_error_song
 
