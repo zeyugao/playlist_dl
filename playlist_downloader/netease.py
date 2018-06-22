@@ -202,6 +202,8 @@ class NetEase(object):
                     self.songs_detail[single_song_detail['id']]['url'] = single_song_detail['url']
                     if 'md5' in single_song_detail:
                         self.songs_detail[single_song_detail['id']]['md5'] = single_song_detail['md5']
+                    else:
+                        self.songs_detail[single_song_detail['id']]['md5'] = None
                 else:
                     error_song_ids.append(single_song_detail['id'])
                     self.songs_detail[single_song_detail['id']]['url'] = None
@@ -236,14 +238,17 @@ class NetEase(object):
                                     single_song_detail['file_name'] + '.mp3',
                                     file_md5=single_song_detail['md5'],
                                     retrytimes=retrytimes)
-                if self.interval:
-                    time.sleep(self.interval)
 
             if single_song_detail['album']['picUrl']:
                 pic_path = os.path.join(pic_folder, single_song_detail['file_name'] + '.jpg')
                 download_album_pic(single_song_detail['album']['picUrl'], pic_path)
                 single_song_detail['pic_path'] = pic_path
+
             modify_mp3(file_path, single_song_detail)
+
+            if self.interval:
+                time.sleep(self.interval)
+
             print()
 
     def download_playlist(self, music_folder, pic_folder, retrytimes=3):

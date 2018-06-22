@@ -5,6 +5,7 @@ import os
 from . import search
 from . import tools
 from .netease import NetEase
+from . import configuration
 
 ne = NetEase()
 
@@ -33,13 +34,13 @@ def download_songs_via_searching(songs_detail, music_folder, pic_folder, extra_m
     search_songs_list = []
 
     if not extra_music_file:
-        extra_music_file = os.path.join(tools.USER_FOLDER, 'extra_music_file.txt')
+        extra_music_file = configuration.config.get_config('extra_music_file')
     search_songs_list.extend(read_extra_music(extra_music_file))
-    extra_music_folder = os.path.join(music_folder, 'extra_music')
+    extra_music_folder = os.path.join(configuration.config.get_config('music_folder'), 'extra_music')
     if not os.path.exists(extra_music_folder):
         os.makedirs(extra_music_folder)
 
-    extra_music_folder = os.path.join(pic_folder, 'extra_music')
+    extra_music_folder = os.path.join(configuration.config.get_config('pic_folder'), 'extra_music')
     if not os.path.exists(extra_music_folder):
         os.makedirs(extra_music_folder)
     new_error_song = []

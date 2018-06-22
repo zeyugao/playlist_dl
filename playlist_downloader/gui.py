@@ -11,6 +11,7 @@ from tkinter.filedialog import askdirectory, askopenfilename
 
 from . import download_main
 from . import tools
+from . import configuration
 
 
 class ProgressBarWindow(object):
@@ -28,26 +29,27 @@ class ProgressBarWindow(object):
     def set_label_searching_song(self):
         '''
             使用搜索下载无法直接从网易云上下载的歌曲
-            强行占用显示total_progress的Label:label_total_progress
+            强行占用显示total_progress的Label：label_total_progress
+            更改为Searching songs
         '''
         self.label_total_progress['text'] = 'Searching songs'
 
     def set_label_total_progress(self, current_playlist_index, total_playlist_num):
-        '''多个Playlist，现在下载到第几个Playlist'''
+        '''多个Playlist，现在下载到第几个Playlist，设置label'''
         self.label_total_progress['text'] = "Playlist: %d/%d" % (current_playlist_index, total_playlist_num)
 
     def set_playlist_progress(self, current_song_index, total_song_index):
-        '''当前的Playlist下载到第几首歌'''
+        '''当前的Playlist下载到第几首歌，设置label'''
         self.label_playlist_progress['text'] = 'Song: %d/%d' % (current_song_index, total_song_index)
         self.progressbar_playlist_progress['value'] = current_song_index * 100 / total_song_index
 
     def step_single_song_progress(self, step):
-        '''当前正在下载的歌曲的进度，step'''
+        '''当前正在下载的歌曲的进度，step进度条'''
         self.progressbar_single_song.step(step)
         self.progressbar_single_song.update()
 
     def set_single_song_progress(self, value):
-        '''当前正在下载的歌曲的进度，set'''
+        '''当前正在下载的歌曲的进度，set进度条'''
         self.progressbar_single_song['value'] = value
 
     def destory(self):
@@ -162,9 +164,9 @@ class MainWindow(object):
         self.root.title('netease playlist downloader')
         self.root.config(width=500, height=325)
         self.root.resizable(0, 0)
-        self.music_folder = os.path.join(tools.USER_FOLDER, 'music_save')
-        self.pic_folder = os.path.join(tools.USER_FOLDER, 'pic_save')
-        self.extra_music_file = os.path.join(tools.USER_FOLDER, 'extra_music_file.txt')
+        self.music_folder = configuration.config.get_config('music_folder')
+        self.pic_folder = configuration.config.get_config('pic_folder')
+        self.extra_music_file = configuration.config.get_config('extra_music_file')
         self.root.protocol("WM_DELETE_WINDOW", lambda: self.root.destroy())
 
     def ask_for_music_folder(self):
@@ -287,6 +289,12 @@ class MainWindow(object):
         pass
 
     def start_download(self):
+        configuration.config.set_config({
+            'music_folder': self.music_folder,
+            'pic_folder': self.pic_folder,
+            'extra_music_file': self.extra_music_file,
+        })
+        configuration.config.save_config()
         contents = self.text_input_playlist.get('1.0', tkinter.END).split('\n')
         self.disable_widget()
         self.progress_window = ProgressBarWindow(self.root)
@@ -325,7 +333,6 @@ class DownloadThread(threading.Thread):
     def run(self):
         download_main.ne.set_wait_interval(1)
 
-        sleep(3)
         error_songs_list = []
 
         while '' in self.args['playlists']:

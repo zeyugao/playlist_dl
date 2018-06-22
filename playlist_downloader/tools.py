@@ -3,21 +3,12 @@
 
 import hashlib
 import os
-import platform
 
 import mutagen
 import requests
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import APIC, ID3, error
 from mutagen.mp3 import MP3
-
-system_str = platform.system()
-USER_FOLDER = None
-
-if system_str == 'Windows':
-    USER_FOLDER = os.path.expandvars("%USERPROFILE%")
-else:
-    USER_FOLDER = os.path.expanduser("~")
 
 progressbar_window = None
 
@@ -61,6 +52,8 @@ def download_music_file(url, file_path, file_name, file_md5=None, overwrite=Fals
             download_music_file(url, file_path, file_md5, retrytimes - 1, True)
         else:
             print('File:%s.mp3 download failed' % file_path)
+    else:
+        print('MD5 check succeed')
 
 
 def download_album_pic(url, file_path, overwrite=False):

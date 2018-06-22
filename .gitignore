@@ -100,7 +100,6 @@ ENV/
 # mypy
 .mypy_cache/
 
-playlist_downloader/music_save/
-playlist_downloader/pic_save/
 .vscode/
-playlist_downloader/extra_music_file.txt
+config
+extra_music_file.txt

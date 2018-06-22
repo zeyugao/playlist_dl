@@ -7,9 +7,11 @@ import sys
 from . import download_main
 from . import tools
 from .gui import MainWindow
+from . import configuration
 
 
 def main():
+    configuration.config = configuration.Config(os.path.join(os.getcwd(), 'config'))
     if len(sys.argv) == 1:
         # Start gui
         print('Starting gui inferface')
@@ -37,10 +39,10 @@ def main():
             if o in ('-e', '--extra'):
                 extra_music_file = a
         if not music_folder or not os.path.exists(music_folder):
-            music_folder = os.path.join(tools.USER_FOLDER, 'music_save')
+            music_folder = configuration.config.get_config('music_folder')
             print('Error occured! Set music_folder to default: %s' % music_folder)
         if not pic_folder or not os.path.exists(pic_folder):
-            pic_folder = os.path.join(tools.USER_FOLDER, 'pic_save')
+            pic_folder = configuration.config.get_config('pic_folder')
             print('Error occured! Set pic_folder to default: %s' % pic_folder)
         download_main.ne.set_wait_interval(wait_time)
         for arg in args:
