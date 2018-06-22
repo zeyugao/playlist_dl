@@ -9,8 +9,8 @@ from time import sleep
 from tkinter import messagebox, ttk
 from tkinter.filedialog import askdirectory, askopenfilename
 
-import download_main
-import tools
+from . import download_main
+from . import tools
 
 
 class ProgressBarWindow(object):

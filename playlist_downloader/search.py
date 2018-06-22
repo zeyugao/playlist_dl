@@ -6,7 +6,7 @@ import os
 
 import requests
 
-from tools import download_album_pic, download_music_file, modify_mp3
+from .tools import download_album_pic, download_music_file, modify_mp3
 
 
 class Sonimei(object):

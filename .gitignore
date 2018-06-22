@@ -100,11 +100,7 @@ ENV/
 # mypy
 .mypy_cache/
 
-script.js
-/music_save/
-/pic_save/
+playlist_downloader/music_save/
+playlist_downloader/pic_save/
 .vscode/
-test.py
-require.txt
-cookie
-extra_music_file.txt
+playlist_downloader/extra_music_file.txt

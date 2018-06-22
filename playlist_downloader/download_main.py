@@ -2,9 +2,9 @@
 # python3
 import os
 
-import search
-import tools
-from netease import NetEase
+from . import search
+from . import tools
+from .netease import NetEase
 
 ne = NetEase()
 
