@@ -9,27 +9,27 @@ Download playlist from netease
 ## Usage
 
 
-> py main.py playlist_urls/playlist_ids
+> py -m  playlist_downloader playlist_urls/playlist_ids
 
 可以同时添加多条playlist的信息
 
 eg:
 
-> py main.py http://music.163.com/#/playlist?id=907018095
+> py -m  playlist_downloader http://music.163.com/#/playlist?id=907018095
 
 Or
 
-> py main.py 907018095
+> py -m  playlist_downloader 907018095
 
 可以一次进行多个playlist的下载
 
 eg:
 
-> py main.py http://music.163.com/#/playlist?id=907018095 http://music.163.com/#/playlist?id=123656572
+> py -m  playlist_downloader http://music.163.com/#/playlist?id=907018095 http://music.163.com/#/playlist?id=123656572
 
 Or
 
-> py main.py 907018095 123656572 58084349
+> py -m  playlist_downloader 907018095 123656572 58084349
 
  -  extra_music_file.txt的说明
 
