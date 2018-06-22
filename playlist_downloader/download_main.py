@@ -52,6 +52,7 @@ def download_songs_via_searching(songs_detail, music_folder, pic_folder, extra_m
         current_song_index += 1
         if tools.progressbar_window:
             tools.progressbar_window.set_label_single_song_progress('Searching music: %s - %s' % (single_song['artists'], single_song['title']))
+            tools.progressbar_window.set_single_song_progress(0)
             tools.progressbar_window.set_playlist_progress(current_song_index, len(search_songs_list))
         if not s.download_song(single_song['title'], single_song['artists'], single_song['album'], extra_music_folder, extra_pic_folder, single_song['type']):
             new_error_song.append(single_song['artists'] + ' - ' + single_song['title'])
