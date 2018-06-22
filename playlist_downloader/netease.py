@@ -200,7 +200,8 @@ class NetEase(object):
             for single_song_detail in json_ret:
                 if single_song_detail['url']:
                     self.songs_detail[single_song_detail['id']]['url'] = single_song_detail['url']
-                    self.songs_detail[single_song_detail['id']]['md5'] = single_song_detail['md5']
+                    if 'md5' in single_song_detail:
+                        self.songs_detail[single_song_detail['id']]['md5'] = single_song_detail['md5']
                 else:
                     error_song_ids.append(single_song_detail['id'])
                     self.songs_detail[single_song_detail['id']]['url'] = None
