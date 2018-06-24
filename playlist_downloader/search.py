@@ -46,21 +46,25 @@ class Sonimei(object):
         else:
             file_name = file_name + ' - ' + search_result['title']
         file_path = os.path.join(music_folder, file_name + '.mp3')
-
-        download_music_file(search_result['url'], file_path=file_path, file_name=(file_name + '.mp3'))
         pic_path = os.path.join(pic_folder, file_name + '.jpg')
-        download_album_pic(search_result['pic'], pic_path)
-
-        music_info = {
-            'title': search_result['title'],
-            'artists': search_result['author'].replace(',', ';'),
-            'pic_path': pic_path,
-            'file_name': file_name
-        }
-        if song_album and not song_album == '':
-            music_info['album'] = {}
-            music_info['album']['name'] = song_album
-        modify_mp3(file_path, music_info)
+        try:
+            download_music_file(search_result['url'], file_path=file_path, file_name=(file_name + '.mp3'))
+        except AssertionError:
+            return False
+        except FileExistsError:
+            pass
+        else:
+            download_album_pic(search_result['pic'], pic_path)
+            music_info = {
+                'title': search_result['title'],
+                'artists': search_result['author'].replace(',', ';'),
+                'pic_path': pic_path,
+                'file_name': file_name
+            }
+            if song_album and not song_album == '':
+                music_info['album'] = {}
+                music_info['album']['name'] = song_album
+            modify_mp3(file_path, music_info)
         return True
 
     def best_match(self, song_title, song_author, all_songs_detail):

@@ -30,10 +30,13 @@ def download_music_file(url, file_path, file_name, file_md5=None, overwrite=Fals
         print('File: %s already exists, skip' % file_path)
         if progressbar_window:
             progressbar_window.set_single_song_progress(100)
-        return
+        raise FileExistsError
     if os.path.exists(file_path):
         os.remove(file_path)
     respond = requests.get(url, stream=True)
+    if not respond.status_code == 200:
+        print('Unable to download music: %s, error code: %d' % (file_name, respond.status_code))
+        raise AssertionError
     file_lenght = int(respond.headers.get('content-length'))
     print('File size: %s B, %s KB' % (int(file_lenght), int(file_lenght / 1024)))
     current_file_md5 = hashlib.md5()
@@ -47,7 +50,7 @@ def download_music_file(url, file_path, file_name, file_md5=None, overwrite=Fals
     if not file_md5:
         return
     if not str(current_file_md5.hexdigest()) == file_md5:
-        print('File:%s.mp3 download failed, retry, %d times left' % file_path, retrytimes)
+        print('File:%s.mp3 download failed, retry, %d times left' % (file_path, retrytimes))
         if retrytimes > 0:
             download_music_file(url, file_path, file_md5, retrytimes - 1, True)
         else:
@@ -68,6 +71,7 @@ def download_album_pic(url, file_path, overwrite=False):
     if os.path.exists(file_path) and not overwrite:
         print('File: %s already exists, skip' % file_path)
         return
+        # raise FileExistsError
     if os.path.exists(file_path):
         os.remove(file_path)
     respond = requests.get(url)
@@ -103,7 +107,10 @@ def modify_mp3(mp3_path, music_info):
         audiofile['album'] = music_info['album']['name']
     if 'date' in music_info:  # and not 'date' in audiofile:
         audiofile['date'] = music_info['date']
-    audiofile.save(v2_version=3)
+    try:
+        audiofile.save(v2_version=3)
+    except TypeError:
+        print()
     audiofile = ID3(mp3_path)
     if 'pic_path' in music_info:
         if os.path.exists(music_info['pic_path']):

@@ -221,10 +221,14 @@ class NetEase(object):
             pic_folder<str>:文件夹，用于存下载的歌曲的专辑封面
         '''
         current_song_index = 0
+        error_songs = []
         for id in self.songs_detail:
             single_song_detail = self.songs_detail[id]
             file_path = None
-            if single_song_detail['url']:
+            if not single_song_detail['url']:
+                error_songs.append(single_song_detail['id'])
+                continue
+            try:
                 current_song_index += 1
                 if tools.progressbar_window:
                     tools.progressbar_window.set_playlist_progress(current_song_index, self.playlist_total_song_num)
@@ -238,18 +242,25 @@ class NetEase(object):
                                     single_song_detail['file_name'] + '.mp3',
                                     file_md5=single_song_detail['md5'],
                                     retrytimes=retrytimes)
-
-            if single_song_detail['album']['picUrl']:
-                pic_path = os.path.join(pic_folder, single_song_detail['file_name'] + '.jpg')
-                download_album_pic(single_song_detail['album']['picUrl'], pic_path)
-                single_song_detail['pic_path'] = pic_path
-
-            modify_mp3(file_path, single_song_detail)
+            except FileExistsError:
+                # 不让程序访问已经有的文件，并且用户没有让overwrite
+                # 但是有可能用户在一首歌还没有下载完的时候就终止了程序，导致歌曲不完整，信息也没有填上
+                # TODO:Fix it
+                pass
+            except AssertionError:
+                error_songs.append(single_song_detail['id'])
+            else:
+                if single_song_detail['album']['picUrl']:
+                    pic_path = os.path.join(pic_folder, single_song_detail['file_name'] + '.jpg')
+                    download_album_pic(single_song_detail['album']['picUrl'], pic_path)
+                    single_song_detail['pic_path'] = pic_path
+                modify_mp3(file_path, single_song_detail)
 
             if self.interval:
                 time.sleep(self.interval)
 
             print()
+        return error_songs
 
     def download_playlist(self, music_folder, pic_folder, retrytimes=3):
         '''
@@ -280,7 +291,7 @@ class NetEase(object):
         self.playlist_total_song_num = len(self.songs_detail) - len(error_songs_ids)
 
         # 下载
-        self.download_music(music_folder, pic_folder, retrytimes)
+        error_songs_ids.extend(self.download_music(music_folder, pic_folder, retrytimes))
 
         error_songs_detail = []
 
@@ -325,5 +336,5 @@ class NetEase(object):
                 error_songs_ids.append(song_id)
                 continue
             self.songs_detail[song_id]['url'] = url
-
+            self.songs_detail[song_id]['md5'] = None
         return error_songs_ids

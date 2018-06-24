@@ -90,7 +90,7 @@ class ProgressBarWindow(object):
         # if result:
         #     # TODO
         #     # 删除未下载完的临时歌曲文件
-        #     messagebox.showerror('Maybe, some songs are not completely downloaded', parent=self.root)
+        #     messagebox.showerror('','Maybe, some songs are not completely downloaded', parent=self.root)
         #     self.destory()
         # else:
         #     pass
@@ -100,6 +100,7 @@ class ProgressBarWindow(object):
 class EditWindow(object):
     def __init__(self, parant_window, file_path):
         # self.root = tkinter.Tk()
+        self.file_path = file_path
         self.root = tkinter.Toplevel(parant_window)
         self.root.title('Edit')
         self.root.config(width=500, height=300)
@@ -107,9 +108,9 @@ class EditWindow(object):
         # self.root.attributes("-topmost", 1)
         self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
         try:
-            self.file = open(file_path, 'a+', encoding='utf-8')
-            self.file.seek(0, 0)
-            self.content_display = self.file.read()
+            file = open(self.file_path, 'r', encoding='utf-8')
+            self.content_display = file.read()
+            file.close()
         except IOError:
             messagebox.showerror('Error', "Can't open file: %s" % file_path, parent=self.root)
 
@@ -140,7 +141,9 @@ class EditWindow(object):
     def save_file(self):
         new_content = self.text_display_file.get('1.0', tkinter.END)
         try:
-            self.file.write(new_content)
+            file = open(self.file_path, 'w', encoding='utf-8')
+            file.write(new_content)
+            file.close()
         except IOError:
             messagebox.showerror('Error', "Can't write file", parent=self.root)
 
@@ -154,7 +157,6 @@ class EditWindow(object):
             self.destory()
 
     def destory(self):
-        self.file.close()
         self.root.destroy()
 
 
@@ -331,7 +333,7 @@ class DownloadThread(threading.Thread):
         self.progressbar_window = args['progressbar_window']
 
     def run(self):
-        download_main.ne.set_wait_interval(1)
+        download_main.ne.set_wait_interval(0.5)
 
         error_songs_list = []
 
@@ -350,6 +352,7 @@ class DownloadThread(threading.Thread):
             text = ''
             for detail in error_songs_list:
                 text = text + detail + '\n'
-            messagebox.showerror('Error', 'The following songs can not be downloaded:\n%s' % text)
+            # messagebox.showerror('Error', 'The following songs can not be downloaded:\n%s' % text)
+            print('The following songs can not be downloaded:\n%s' % text)
         self.args['callback'](True)
         raise SystemExit
