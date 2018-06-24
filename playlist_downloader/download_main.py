@@ -16,15 +16,19 @@ def read_extra_music(extra_music_file):
     extra_music = []
     with open(extra_music_file, 'r', encoding='utf-8') as file:
         for line in file.readlines():
-            if line.startswith('#'):
+            if line.startswith('#') or line.startswith('\n'):
                 continue
             splited_line = line.split(';')
-            extra_music.append({
-                'title': splited_line[0],
-                'artists': splited_line[1],
-                'album': splited_line[2],
-                'type': splited_line[3].replace('\n', '')
-            })
+            try:
+                extra_music.append({
+                    'title': splited_line[0],
+                    'artists': splited_line[1],
+                    'album': splited_line[2],
+                    'type': splited_line[3].replace('\n', '')
+                })
+            except IndexError:
+                print("Can't resolve the input: %s" % line)
+                print('Maybe you lost a ";"?')
     return extra_music
 
 

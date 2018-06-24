@@ -65,6 +65,8 @@ class Sonimei(object):
                 music_info['album'] = {}
                 music_info['album']['name'] = song_album
             modify_mp3(file_path, music_info)
+
+            print()
         return True
 
     def best_match(self, song_title, song_author, all_songs_detail):

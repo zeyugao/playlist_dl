@@ -2,18 +2,12 @@
 # python3
 import os
 import json
-import platform
-
-USER_FOLDER = None
-if platform.system() == 'Windows':
-    USER_FOLDER = os.path.expandvars("%USERPROFILE%")
-else:
-    USER_FOLDER = os.path.expanduser("~")
 
 
 class Config(object):
     def __init__(self, config_file_path):
         self.config_file_path = config_file_path
+        USER_FOLDER = os.path.expanduser("~")
         if not os.path.exists(self.config_file_path):
 
             # Default config

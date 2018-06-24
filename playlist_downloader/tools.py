@@ -107,10 +107,7 @@ def modify_mp3(mp3_path, music_info):
         audiofile['album'] = music_info['album']['name']
     if 'date' in music_info:  # and not 'date' in audiofile:
         audiofile['date'] = music_info['date']
-    try:
-        audiofile.save(v2_version=3)
-    except TypeError:
-        print()
+    audiofile.save(v2_version=3)
     audiofile = ID3(mp3_path)
     if 'pic_path' in music_info:
         if os.path.exists(music_info['pic_path']):
