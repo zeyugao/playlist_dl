@@ -117,7 +117,7 @@ class NetEase(object):
         if(ret_json['code'] == 200):
             return ret_json['playlist']['tracks']
         else:
-            print('Error! Code: %s\n', ret_json['code'])
+            tools.logger.log('Error! Code: %d\n' % ret_json['code'], tools.logger.ERROR)
             return ret_json['data']
 
     def get_quality_by_privilege(self, all_quality):
@@ -144,20 +144,20 @@ class NetEase(object):
         self.download_music_info = {}
         for origin_single_song_detail in origin_playlist_detial:
             single_song_detail = {}
-            single_song_detail['title'] = origin_single_song_detail['name'].replace(u'\xa0', u' ')
+            single_song_detail['title'] = origin_single_song_detail['name'].replace(u'\xa0', u' ').strip()
             single_song_detail['album'] = {}
             single_song_detail['artists'] = ''
             for artist in origin_single_song_detail['ar']:
-                single_song_detail['artists'] = single_song_detail['artists'] + artist['name'] + ','
-            single_song_detail['artists'] = single_song_detail['artists'][:-1]
+                single_song_detail['artists'] = single_song_detail['artists'] + artist['name'].strip() + ','
+            single_song_detail['artists'] = single_song_detail['artists'][:-1].strip()
             if len(single_song_detail['artists']) > 50:
                 # 如果艺术家过多导致文件名过长，则文件名的作者则为第一个艺术家的名字
-                print('Song: %s\'s name too long, cut' % single_song_detail['title'])
+                tools.logger.log('Song: %s\'s name too long, cut' % single_song_detail['title'], tools.logger.INFO)
                 single_song_detail['file_name'] = single_song_detail['artists'].split(',')[0] + ' - ' + single_song_detail['title']
             else:
                 single_song_detail['file_name'] = single_song_detail['artists'] + ' - ' + single_song_detail['title']
-            single_song_detail['artists'] = single_song_detail['artists'].replace(',', ';')
-            single_song_detail['file_name'] = self.replace_file_name(single_song_detail['file_name'])
+            single_song_detail['artists'] = single_song_detail['artists'].replace(',', ';').strip()
+            single_song_detail['file_name'] = self.replace_file_name(single_song_detail['file_name']).strip()
             single_song_detail['id'] = origin_single_song_detail['id']
             if 'al' in origin_single_song_detail and origin_single_song_detail['al']:
                 single_song_detail['album']['picUrl'] = origin_single_song_detail['al']['picUrl']
@@ -194,7 +194,7 @@ class NetEase(object):
             if json_ret['code'] == 200:
                 json_ret = json_ret['data']
             else:
-                print('Error! Code: %s' % json_ret['code'])
+                tools.logger.log('Error! Code: %s' % json_ret['code'], level=tools.logger.ERROR)
                 error_song_ids.append(ids)
                 continue
             for single_song_detail in json_ret:
@@ -233,9 +233,7 @@ class NetEase(object):
                 if tools.progressbar_window:
                     tools.progressbar_window.set_playlist_progress(current_song_index, self.playlist_total_song_num)
                 file_path = os.path.join(music_folder, single_song_detail['file_name'] + '.mp3')
-                print('Donwload song file: %s' % single_song_detail['file_name'])
-
-                # print(single_song_detail['file_name'], single_song_detail['url'])
+                tools.logger.log('Donwload song file: %s' % single_song_detail['file_name'], level=tools.logger.INFO)
 
                 download_music_file(single_song_detail['url'],
                                     file_path,
@@ -251,6 +249,7 @@ class NetEase(object):
                 error_songs.append(single_song_detail['id'])
             else:
                 if single_song_detail['album']['picUrl']:
+                    tools.logger.log('Download album pic: %s' % single_song_detail['file_name'], level=tools.logger.INFO)
                     pic_path = os.path.join(pic_folder, single_song_detail['file_name'] + '.jpg')
                     download_album_pic(single_song_detail['album']['picUrl'], pic_path)
                     single_song_detail['pic_path'] = pic_path
@@ -258,8 +257,8 @@ class NetEase(object):
 
             if self.interval:
                 time.sleep(self.interval)
+            # tools.logger.log('', level=None)
 
-            print()
         return error_songs
 
     def download_playlist(self, music_folder, pic_folder, retrytimes=3):
@@ -287,12 +286,13 @@ class NetEase(object):
 
         # 用旧版的api获取一些可能因为版权原因而导致无法下载的歌曲
         error_songs_ids = self.get_songs_detail_old_api(error_songs_ids)
-
         self.playlist_total_song_num = len(self.songs_detail) - len(error_songs_ids)
 
         # 下载
         error_songs_ids.extend(self.download_music(music_folder, pic_folder, retrytimes))
 
+        # 去重
+        error_songs_ids = list(set(error_songs_ids))
         error_songs_detail = []
 
         for single_error_song_id in error_songs_ids:
@@ -316,7 +316,7 @@ class NetEase(object):
                 json_ret = json.loads(self.session.post(target_url, data=encrypted_request(data),
                                                         headers=fake_headers).text)['result']['songs'][0]
             except IndexError:
-                print("Can't get song")
+                tools.logger.log("Can't get song", level=tools.logger.ERROR)
                 error_songs_ids.append(song_id)
             music = {}
             for i in range(0, len(quality_privilege)):

@@ -27,7 +27,7 @@ def download_music_file(url, file_path, file_name, file_md5=None, overwrite=Fals
         progressbar_window.set_label_single_song_progress('Downloading file: %s' % file_name)
         progressbar_window.set_single_song_progress(0)
     if os.path.exists(file_path) and not overwrite:
-        print('File: %s already exists, skip' % file_path)
+        logger.log('File: %s already exists, skip' % file_path, level=logger.INFO)
         if progressbar_window:
             progressbar_window.set_single_song_progress(100)
         raise FileExistsError
@@ -35,10 +35,10 @@ def download_music_file(url, file_path, file_name, file_md5=None, overwrite=Fals
         os.remove(file_path)
     respond = requests.get(url, stream=True)
     if not respond.status_code == 200:
-        print('Unable to download music: %s, error code: %d' % (file_name, respond.status_code))
+        logger.log('Unable to download music: %s, error code: %d' % (file_name, respond.status_code), level=logger.ERROR)
         raise AssertionError
     file_lenght = int(respond.headers.get('content-length'))
-    print('File size: %s B, %s KB' % (int(file_lenght), int(file_lenght / 1024)))
+    logger.log('File size: %s B, %s KB' % (int(file_lenght), int(file_lenght / 1024)), level=logger.DEBUG)
     current_file_md5 = hashlib.md5()
     with open(file_path, 'wb') as file:
         for chunk in respond.iter_content(chunk_size=1024):
@@ -50,13 +50,13 @@ def download_music_file(url, file_path, file_name, file_md5=None, overwrite=Fals
     if not file_md5:
         return
     if not str(current_file_md5.hexdigest()) == file_md5:
-        print('File:%s.mp3 download failed, retry, %d times left' % (file_path, retrytimes))
+        logger.log('File:%s.mp3 download failed, retry, %d times left' % (file_path, retrytimes), level=logger.ERROR)
         if retrytimes > 0:
             download_music_file(url, file_path, file_md5, retrytimes - 1, True)
         else:
-            print('File:%s.mp3 download failed' % file_path)
+            logger.log('File:%s.mp3 download failed' % file_path, level=logger.ERROR)
     else:
-        print('MD5 check succeed')
+        logger.log('MD5 check succeed', level=logger.INFO)
 
 
 def download_album_pic(url, file_path, overwrite=False):
@@ -69,11 +69,13 @@ def download_album_pic(url, file_path, overwrite=False):
     '''
 
     if os.path.exists(file_path) and not overwrite:
-        print('File: %s already exists, skip' % file_path)
+        logger.log('File: %s already exists, skip' % file_path, level=logger.INFO)
         return
         # raise FileExistsError
     if os.path.exists(file_path):
         os.remove(file_path)
+    if progressbar_window:
+        progressbar_window.set_label_single_song_progress('Download album pic: %s')
     respond = requests.get(url)
     if respond.status_code == 200:
         with open(file_path, 'wb') as file:
@@ -92,7 +94,7 @@ def modify_mp3(mp3_path, music_info):
             album<str>:所属专辑
             pic_path<str>:专辑封面的路径
     '''
-    print('Modify mp3 ID3 for song: %s' % music_info['file_name'])
+    logger.log('Modify mp3 ID3 for song: %s' % music_info['file_name'], level=logger.INFO)
     try:
         audiofile = EasyID3(mp3_path)
     except:
@@ -114,3 +116,43 @@ def modify_mp3(mp3_path, music_info):
             with open(music_info['pic_path'], 'rb') as pic_file:
                 audiofile['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, desc=u'Cover', data=pic_file.read())
     audiofile.save(v2_version=3)
+
+
+class Logger(object):
+    DEBUG = 0
+    INFO = 1
+    WARNING = 2
+    ERROR = 3
+
+    str = {
+        0: '[DEBUG]',
+        1: '[INFO]',
+        2: '[WARNING]',
+        3: '[ERROR]'
+    }
+
+    def __init__(self, log_path=None):
+        self.level = self.WARNING
+
+        # 确保文件存在
+        self.log_path = log_path
+        if log_path:
+            open(log_path, 'a+', encoding='utf-8').close()
+
+    def set_level(self, level):
+        if isinstance(level, int):
+            self.level = level
+        else:
+            self.level = {'DEBUG': 0, 'INFO': 1, 'WARNING': 2, 'ERROR': 4}[level]
+
+    def log(self, text, level):
+        if not level is None:
+            if level < self.level:
+                # Don't log
+                return
+            print(self.str[level] + ' ' + text)
+        else:
+            print(text)
+
+
+logger = Logger()

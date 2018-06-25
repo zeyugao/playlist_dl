@@ -8,6 +8,7 @@ import requests
 import difflib
 
 from .tools import download_album_pic, download_music_file, modify_mp3
+from . import tools
 
 
 class Sonimei(object):
@@ -41,7 +42,7 @@ class Sonimei(object):
         file_name = file_name[:-1]
         if len(file_name) > 50:
             # 如果艺术家过多导致文件名过长，则文件名的作者则为第一个艺术家的名字
-            print('Song: %s\'s name too long, cut' % search_result['title'])
+            tools.logger.log('Song: %s\'s name too long, cut' % search_result['title'], level=tools.logger.INFO)
             file_name = artists[0] + ' - ' + search_result['title']
         else:
             file_name = file_name + ' - ' + search_result['title']
@@ -66,7 +67,7 @@ class Sonimei(object):
                 music_info['album']['name'] = song_album
             modify_mp3(file_path, music_info)
 
-            print()
+            # tools.logger.log('', level=None)
         return True
 
     def best_match(self, song_title, song_author, all_songs_detail):
@@ -94,7 +95,6 @@ class Sonimei(object):
             'cache-control': 'max-age=0',
             'user-agent': ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                            ' (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36'),
-            # 'Referer': 'http://music.sonimei.cn/?name=%s%s&type=%s',  # % (song_title, song_author, type),
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'Origin': 'http://music.sonimei.cn',
             'X-Requested-With': 'XMLHttpRequest',
@@ -117,7 +117,7 @@ class Sonimei(object):
                 retrytimes = retrytimes - 1
             except IndexError:
                 retrytimes = retrytimes - 1
-        print('Download failed, song: %s - %s' % (song_author, song_title))
+        ('Download failed, song: %s - %s' % (song_author, song_title))
         return None
 
 
