@@ -103,3 +103,4 @@ ENV/
 .vscode/
 config
 extra_music_file.txt
+run.py

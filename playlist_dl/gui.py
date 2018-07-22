@@ -132,7 +132,7 @@ class EditWindow(object):
         button_save = ttk.Button(self.root, text='Cancel', command=self.destory)
         button_save.grid(row=2, column=2, sticky='e')
 
-        self.text_display_file.insert(tkinter.END, self.content_display)
+        self.text_display_file.insert(1.0, self.content_display)
 
     def save_and_exit(self):
         self.save_file()
@@ -140,6 +140,8 @@ class EditWindow(object):
 
     def save_file(self):
         new_content = self.text_display_file.get('1.0', tkinter.END)
+        while not new_content.find('\n\n') == -1:
+            new_content = new_content.replace('\n\n','\n')
         try:
             file = open(self.file_path, 'w', encoding='utf-8')
             file.write(new_content)
