@@ -9,7 +9,7 @@ import os
 import time
 
 import requests
-from Crypto.Cipher import AES
+from Cryptodome.Cipher import AES
 
 from .tools import download_album_pic, download_music_file, modify_mp3
 from . import tools

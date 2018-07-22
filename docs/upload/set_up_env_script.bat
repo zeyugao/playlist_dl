@@ -41,7 +41,7 @@ echo Installing packages
 
 C:\Python36\Scripts\pip.exe install requests
 C:\Python36\Scripts\pip.exe install mutagen
-C:\Python36\Scripts\pip.exe install pycryptodome
+C:\Python36\Scripts\pip.exe install pycryptodomex
 
 echo Installation finished
 
@@ -73,7 +73,7 @@ echo Installing packages
 
 C:\Python34\Scripts\pip.exe install requests
 C:\Python34\Scripts\pip.exe install mutagen
-C:\Python34\Scripts\pip.exe install pycryptodome
+C:\Python34\Scripts\pip.exe install pycryptodomex
 
 echo
 echo
@@ -98,7 +98,7 @@ echo Installing packages
 
 pip.exe install requests
 pip.exe install mutagen
-pip.exe install pycryptodome
+pip.exe install pycryptodomex
 
 echo ...
 echo Installation finished
