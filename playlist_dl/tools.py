@@ -50,7 +50,7 @@ def download_music_file(url, file_path, file_name, file_md5=None, overwrite=Fals
     if not file_md5:
         return
     if not str(current_file_md5.hexdigest()) == file_md5:
-        logger.log('File:%s.mp3 download failed, retry, %d times left' % (file_path, retrytimes), level=logger.ERROR)
+        logger.log('File:%s.mp3 download failed: md5 check failed, retry, %d times left' % (file_path, retrytimes), level=logger.ERROR)
         if retrytimes > 0:
             download_music_file(url, file_path, file_md5, retrytimes - 1, True)
         else:
@@ -75,7 +75,7 @@ def download_album_pic(url, file_path, overwrite=False):
     if os.path.exists(file_path):
         os.remove(file_path)
     if progressbar_window:
-        progressbar_window.set_label_single_song_progress('Download album pic: %s')
+        progressbar_window.set_label_single_song_progress('Download album pic')
     respond = requests.get(url)
     if respond.status_code == 200:
         with open(file_path, 'wb') as file:

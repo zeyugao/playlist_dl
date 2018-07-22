@@ -29,7 +29,8 @@ class Sonimei(object):
                             qingting    ximalaya
                             kg      5singyc 5singfc
         '''
-
+        if os.path.exists(os.path.join(music_folder, song_author + ' - ' + song_title + '.mp3')):
+            tools.logger.log('Maybe the song already existed',tools.logger.WARNING)
         search_result = self.search(song_title, song_author, type)
         if search_result is None:
             return False
