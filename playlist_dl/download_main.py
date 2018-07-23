@@ -41,7 +41,7 @@ def download_songs_via_searching(songs_detail, music_folder, pic_folder, extra_m
         tools.progressbar_window.set_single_song_progress(100)
 
     if songs_detail == []:
-        return
+        return []
 
     tools.logger.log('Preparing for searching music', tools.logger.INFO)
 

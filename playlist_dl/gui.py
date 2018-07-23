@@ -108,9 +108,12 @@ class EditWindow(object):
         # self.root.attributes("-topmost", 1)
         self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
         try:
-            file = open(self.file_path, 'r', encoding='utf-8')
-            self.content_display = file.read()
-            file.close()
+            if os.path.exists(self.file_path):
+                file = open(self.file_path, 'r', encoding='utf-8')
+                self.content_display = file.read()
+                file.close()
+            else:
+                self.content_display = ''
         except IOError:
             messagebox.showerror('Error', "Can't open file: %s" % file_path, parent=self.root)
 
