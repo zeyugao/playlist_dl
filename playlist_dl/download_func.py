@@ -4,7 +4,7 @@ import os
 
 from . import search
 from . import tools
-from .netease import NetEase
+from .netease_api import NetEase
 from . import configuration
 
 ne = NetEase()
@@ -98,10 +98,15 @@ def download_netease_playist(playlist,
     tools.logger.log('Music file: %s' % music_folder, tools.logger.DEBUG)
     tools.logger.log('Album file: %s' % pic_folder, tools.logger.DEBUG)
 
+    
     if playlist.isdigit():
         ne.set_playlist_id(playlist)
     else:
-        ne.set_playlist_url(playlist)
+        try:
+            ne.set_playlist_url(playlist)
+        except ValueError:
+            tools.logger.log("Couldn't resolve the input, exit",level = tools.logger.ERROR)
+            exit()
     tools.logger.log('Playlist id: %s' % str(ne.playlist_id), level=tools.logger.DEBUG)
     error_songs_detail = ne.download_playlist(music_folder=music_folder, pic_folder=pic_folder)
     error_songs_list = []

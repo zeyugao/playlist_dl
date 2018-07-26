@@ -9,7 +9,7 @@ from time import sleep
 from tkinter import messagebox, ttk
 from tkinter.filedialog import askdirectory, askopenfilename
 
-from . import download_main
+from . import download_func
 from . import tools
 from . import configuration
 
@@ -338,7 +338,7 @@ class DownloadThread(threading.Thread):
         self.progressbar_window = args['progressbar_window']
 
     def run(self):
-        download_main.ne.set_wait_interval(configuration.config.get_config('wait_time'))
+        download_func.ne.set_wait_interval(configuration.config.get_config('wait_time'))
 
         error_songs_list = []
 
@@ -349,8 +349,8 @@ class DownloadThread(threading.Thread):
         for playlist in self.args['playlists']:
             i += 1
             self.progressbar_window.set_label_total_progress(i, len(self.args['playlists']))
-            error_songs_list.extend(download_main.download_netease_playist(playlist, self.args['music_folder'], self.args['pic_folder']))
-        error_songs_list = download_main.download_songs_via_searching(error_songs_list, self.args['music_folder'], self.args['pic_folder'], self.args['extra_music_file'])
+            error_songs_list.extend(download_func.download_netease_playist(playlist, self.args['music_folder'], self.args['pic_folder']))
+        error_songs_list = download_func.download_songs_via_searching(error_songs_list, self.args['music_folder'], self.args['pic_folder'], self.args['extra_music_file'])
         if len(error_songs_list):
             text = ''
             for detail in error_songs_list:

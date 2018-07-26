@@ -56,10 +56,9 @@ title: Usage (Alter)
       │  LICENSE
       │  README.md
       └─playlist_dl
-            download_main.py
+            download_func.py
             extra_music_file.txt
             gui.py
-            main.py
             netease.py
             search.py
             tools.py
@@ -76,10 +75,9 @@ title: Usage (Alter)
       │  README.md
       |  run_program.bat
       └─playlist_dl
-            download_main.py
+            download_func.py
             extra_music_file.txt
             gui.py
-            main.py
             netease.py
             search.py
             tools.py

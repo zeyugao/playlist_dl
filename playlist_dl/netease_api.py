@@ -92,13 +92,16 @@ class NetEase(object):
         '''
             设置歌单id
         '''
-        self.playlist_id = id
+        raise ValueError()
 
     def set_playlist_url(self, url):
         '''
             设置歌单url
         '''
-        self.playlist_id = url.split('playlist?id=')[1]
+        try:
+            self.playlist_id = url.split('playlist?id=')[1]
+        except IndexError:
+            raise ValueError()
 
     def get_playlist_detail(self, playlist_id):
         target_url = 'http://music.163.com/weapi/v3/playlist/detail?csrf_token=' + self.csrf
